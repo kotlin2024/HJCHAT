@@ -1,5 +1,6 @@
 package hjp.hjchat.infra.security.ouath.controller
 
+import hjp.hjchat.infra.security.jwt.TokenResponse
 import hjp.hjchat.infra.security.ouath.dto.LoginRequest
 import hjp.hjchat.infra.security.ouath.dto.SignUpRequest
 import hjp.hjchat.infra.security.ouath.service.OAuthService
@@ -22,8 +23,8 @@ class OAuthController(
     }
 
     @PostMapping("/login")
-    fun login(@RequestBody request: LoginRequest) {
-
+    fun login(@RequestBody request: LoginRequest): ResponseEntity<TokenResponse> {
+        return ResponseEntity.status(HttpStatus.OK).body(oAuthService.login(request))
     }
 
     @PostMapping("/social-login")

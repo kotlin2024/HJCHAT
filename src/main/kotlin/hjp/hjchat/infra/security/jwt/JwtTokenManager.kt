@@ -28,17 +28,17 @@ class JwtTokenManager(
 
     private val key = Keys.hmacShaKeyFor(secret.toByteArray(StandardCharsets.UTF_8))
 
-    fun generateTokenResponse(memberId: Long, memberRole: MemberRole): TokenResponse {
+    fun generateTokenResponse(memberId: Long, memberRole: String): TokenResponse {
         return TokenResponse(
             accessToken = generateToken(
                 memberId.toString(),
-                memberRole.name,
+                memberRole,
                 TokenType.ACCESS_TOKEN_TYPE.name,
                 accessTokenValidity
             ),
             refreshToken = generateToken(
                 memberId.toString(),
-                memberRole.name,
+                memberRole,
                 TokenType.REFRESH_TOKEN_TYPE.name,
                 refreshTokenValidity
             )

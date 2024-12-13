@@ -1,9 +1,13 @@
 package hjp.hjchat.infra.security.ouath.service
 
+import hjp.hjchat.domain.member.dto.MemberRole
 import hjp.hjchat.domain.member.entity.MemberEntity
 import hjp.hjchat.exception.DuplicateEmailException
 import hjp.hjchat.exception.DuplicateUsernameException
 import hjp.hjchat.exception.PasswordMismatchException
+import hjp.hjchat.infra.security.jwt.JwtTokenManager
+import hjp.hjchat.infra.security.jwt.TokenResponse
+import hjp.hjchat.infra.security.ouath.dto.LoginRequest
 import hjp.hjchat.infra.security.ouath.dto.SignUpRequest
 import hjp.hjchat.infra.security.ouath.model.OAuthRepository
 import jakarta.transaction.Transactional
@@ -13,7 +17,8 @@ import org.springframework.security.crypto.password.PasswordEncoder
 @Service
 class OAuthService(
     private val oAuthRepository: OAuthRepository,
-    private val passwordEncoder: PasswordEncoder
+    private val passwordEncoder: PasswordEncoder,
+    private val jwtTokenManager: JwtTokenManager
 ) {
 
     @Transactional
@@ -35,14 +40,24 @@ class OAuthService(
                 userName = request.username,
                 email = request.email,
                 password = passwordEncoder.encode(request.password),
-                status = "ACTIVE"
+                status = "ACTIVE",
+                memberRole = MemberRole.USER.name
             )
         )
 
         return "회원가입 성공"
     }
 
-    fun login() {
+    fun login(request: LoginRequest): TokenResponse {
+        val loginMember = oAuthRepository.findByUserName(request.username) ?: throw IllegalStateException("존재하지 않는 유저")
+        check(
+            passwordEncoder.matches(
+                request.password,
+                loginMember.password
+            )
+        ) { "비밀번호가 맞지 않음" }
+        val tokens = jwtTokenManager.generateTokenResponse(loginMember.id, loginMember.memberRole)
 
+        return tokens
     }
 }

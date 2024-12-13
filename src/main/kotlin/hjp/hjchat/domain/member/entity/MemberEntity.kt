@@ -29,4 +29,7 @@ class MemberEntity(
 
     @Column(name="회원_상태")
     val status: String?,
+
+    @Column(name="유저_role")
+    val memberRole: String,
 )

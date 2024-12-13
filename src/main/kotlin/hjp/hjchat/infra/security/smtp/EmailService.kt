@@ -17,7 +17,7 @@ class EmailService(
         아래 링크를 클릭하여 이메일 인증을 완료해주세요:
         $verificationUrl
         
-        링크는 24시간 동안 유효합니다.
+        링크는 1시간 동안 유효합니다.
     """.trimIndent()
 
         // 이메일 발송 로직

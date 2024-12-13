@@ -44,8 +44,11 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.3")
 
     //QueryDsl
-    implementation("com.querydsl:querydsl-jpa:$queryDslVersion:jakarta") // 추가!
+    implementation("com.querydsl:querydsl-jpa:$queryDslVersion:jakarta")
     kapt("com.querydsl:querydsl-apt:$queryDslVersion:jakarta")
+
+    //SMTP
+    implementation ("org.springframework.boot:spring-boot-starter-mail")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")

@@ -4,6 +4,9 @@ plugins {
     id("org.springframework.boot") version "3.4.0"
     id("io.spring.dependency-management") version "1.1.6"
     kotlin("plugin.jpa") version "1.9.25"
+    kotlin("kapt") version "1.9.25"
+//    kotlin("plugin.noarg") version "1.9.25"
+//    kotlin("plugin.allopen") version "1.9.25"
 }
 
 group = "HJP"
@@ -18,9 +21,11 @@ java {
 repositories {
     mavenCentral()
 }
+val queryDslVersion = "5.0.0"
+
 
 dependencies {
-    //implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-graphql")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -31,12 +36,16 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
 
     // MYSQL
-    //implementation("mysql:mysql-connector-java")
+    implementation("mysql:mysql-connector-java")
 
     // JJWT
     implementation("io.jsonwebtoken:jjwt-api:0.12.3")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.3")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.3")
+
+    //QueryDsl
+    implementation("com.querydsl:querydsl-jpa:$queryDslVersion:jakarta") // 추가!
+    kapt("com.querydsl:querydsl-apt:$queryDslVersion:jakarta")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
@@ -57,6 +66,11 @@ allOpen {
     annotation("jakarta.persistence.MappedSuperclass")
     annotation("jakarta.persistence.Embeddable")
 }
+//noArg {
+//    annotation("jakarta.persistence.Entity")
+//    annotation("jakarta.persistence.MappedSuperclass")
+//    annotation("jakarta.persistence.Embeddable")
+//}
 
 tasks.withType<Test> {
     useJUnitPlatform()

@@ -35,8 +35,7 @@ class SecurityConfig(
                     "/webjars/**",
                     "/h2-console/**",
                     "/error",
-                    "/admin/**",
-                    "/oauth2/**"
+                    "/api/oauth/**",
                 ).permitAll()
                     .requestMatchers(HttpMethod.GET, "/**").permitAll()
                     .anyRequest().authenticated()

@@ -5,8 +5,8 @@ plugins {
     id("io.spring.dependency-management") version "1.1.6"
     kotlin("plugin.jpa") version "1.9.25"
     kotlin("kapt") version "1.9.25"
-//    kotlin("plugin.noarg") version "1.9.25"
-//    kotlin("plugin.allopen") version "1.9.25"
+    kotlin("plugin.noarg") version "1.9.25"
+    kotlin("plugin.allopen") version "1.9.25"
 }
 
 group = "HJP"
@@ -36,7 +36,7 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
 
     // MYSQL
-    implementation("mysql:mysql-connector-java")
+    implementation("mysql:mysql-connector-java:8.0.33")
 
     // JJWT
     implementation("io.jsonwebtoken:jjwt-api:0.12.3")

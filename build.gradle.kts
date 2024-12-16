@@ -32,6 +32,10 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
+    // GraphQL Playground
+    implementation("com.graphql-java-kickstart:graphql-spring-boot-starter:11.0.0")
+    implementation("com.graphql-java-kickstart:graphiql-spring-boot-starter:11.0.0")
+
     // SWAGGER
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")
 

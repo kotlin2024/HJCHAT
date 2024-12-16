@@ -1,13 +1,32 @@
 package hjp.hjchat.domain.chat.controller
 
+import graphql.kickstart.tools.GraphQLMutationResolver
+import graphql.kickstart.tools.GraphQLQueryResolver
+import hjp.hjchat.domain.chat.dto.MessageDto
+import hjp.hjchat.domain.chat.entity.Message
+import hjp.hjchat.domain.chat.entity.toResponse
+import hjp.hjchat.domain.chat.model.MessageRepository
+import org.springframework.graphql.data.method.annotation.Argument
+import org.springframework.graphql.data.method.annotation.MutationMapping
 import org.springframework.graphql.data.method.annotation.QueryMapping
 import org.springframework.stereotype.Controller
 
 @Controller
-class ChatController {
+class ChatController(
+    private val messageRepository: MessageRepository
+) : GraphQLQueryResolver, GraphQLMutationResolver {
 
     @QueryMapping
-    fun hello(): String {
-        return "Hello, GraphQL!"
+    fun getMessages(): List<MessageDto> {
+        return messageRepository.findAll().map { it.toResponse() }
+    }
+
+    @MutationMapping
+    fun sendMessage(@Argument content: String): MessageDto {
+        println("Saved message: $content")
+        val savedMessage = messageRepository.save(
+            Message(content = content)
+        )
+        return savedMessage.toResponse()
     }
 }

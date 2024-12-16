@@ -35,8 +35,9 @@ class SecurityConfig(
                     "/webjars/**",
                     "/h2-console/**",
                     "/error",
+                    "/graphiql?path=/graphql",
                     "/api/oauth/**",
-                    "/playground/**"
+                    "/graphql",
                 ).permitAll()
                     .requestMatchers(HttpMethod.GET, "/**").permitAll()
                     .anyRequest().authenticated()

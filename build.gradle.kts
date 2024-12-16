@@ -26,15 +26,16 @@ val queryDslVersion = "5.0.0"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-graphql")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
-    // GraphQL Playground
+    // GraphQL
+    implementation("org.springframework.boot:spring-boot-starter-graphql")
     implementation("com.graphql-java-kickstart:graphql-spring-boot-starter:11.0.0")
     implementation("com.graphql-java-kickstart:graphiql-spring-boot-starter:11.0.0")
+
 
     // SWAGGER
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")

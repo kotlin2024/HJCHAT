@@ -36,6 +36,7 @@ class SecurityConfig(
                     "/h2-console/**",
                     "/error",
                     "/api/oauth/**",
+                    "/playground/**"
                 ).permitAll()
                     .requestMatchers(HttpMethod.GET, "/**").permitAll()
                     .anyRequest().authenticated()

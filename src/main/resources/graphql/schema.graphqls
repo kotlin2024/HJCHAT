@@ -1,0 +1,14 @@
+type Query {
+    getMessages: [Message]
+}
+
+type Mutation {
+    sendMessage(content: String!): Message
+}
+
+type Message {
+    id: ID!
+    content: String!
+    sender: String!
+    timestamp: String!
+}

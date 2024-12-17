@@ -8,11 +8,15 @@ import hjp.hjchat.domain.chat.entity.Message
 import hjp.hjchat.domain.chat.entity.toResponse
 import hjp.hjchat.domain.chat.model.MessageRepository
 import hjp.hjchat.infra.security.jwt.JwtTokenManager
+import hjp.hjchat.infra.security.jwt.UserPrincipal
 import hjp.hjchat.infra.security.ouath.model.OAuthRepository
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.MutationMapping
 import org.springframework.graphql.data.method.annotation.QueryMapping
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.User
 import org.springframework.stereotype.Controller
+import kotlin.jvm.optionals.getOrNull
 
 @Controller
 class ChatController(
@@ -28,23 +32,17 @@ class ChatController(
 
     @MutationMapping
     fun sendMessage(
-        @Argument content: String,
-        graphQlContext: GraphQLContext
+        @AuthenticationPrincipal user: UserPrincipal, // 인증된 사용자 정보
+        @Argument content: String
     ): MessageDto {
 
-        val authorizationHeader = graphQlContext.getOrDefault<String>("Authorization", "")
-        val token = authorizationHeader.removePrefix("Bearer ").trim()
-        val userId = jwtTokenManager.extractUserId(token)
-
-        val user = oAuthRepository.findById(userId)
-            .orElseThrow { IllegalArgumentException("Member not found with id: $userId") }
-
-
+        val member = oAuthRepository.findById(user.memberId)
+            .orElseThrow { IllegalArgumentException("Member not found") }
 
         val savedMessage = messageRepository.save(
             Message(
                 content = content,
-                userId = user,
+                userId = member
             )
         )
         return savedMessage.toResponse()

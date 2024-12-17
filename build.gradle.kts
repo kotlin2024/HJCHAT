@@ -36,6 +36,8 @@ dependencies {
     implementation("com.graphql-java-kickstart:graphql-spring-boot-starter:11.0.0")
     implementation("com.graphql-java-kickstart:graphiql-spring-boot-starter:11.0.0")
 
+    // Spring GraphQL (Spring GraphQL 의존성)
+    //implementation("org.springframework.graphql:spring-graphql:1.3.3")
 
     // SWAGGER
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0")

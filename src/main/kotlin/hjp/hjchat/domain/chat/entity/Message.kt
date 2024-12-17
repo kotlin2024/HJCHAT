@@ -1,6 +1,7 @@
 package hjp.hjchat.domain.chat.entity
 
 import hjp.hjchat.domain.chat.dto.MessageDto
+import hjp.hjchat.domain.member.entity.MemberEntity
 import jakarta.persistence.*
 import java.time.LocalDateTime
 
@@ -10,6 +11,10 @@ class Message (
 
     @Id @GeneratedValue
     val id: Long? = null,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    val userId: MemberEntity,
 
     @Column(name="메세지_내용")
     val content: String,
@@ -28,12 +33,13 @@ class Message (
 
     @Column(name="메세지_생성_날짜")
     val createdAt: LocalDateTime = LocalDateTime.now(),
+
     )
 fun Message.toResponse(): MessageDto {
     return MessageDto(
         id = id!!,
         content = content,
-        sender =  "추후에 userID가 들어갈것",
+        sender =  userId.userName,
         timestamp = createdAt.toString(),
     )
 }

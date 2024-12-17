@@ -67,4 +67,8 @@ class JwtTokenManager(
             Jwts.parser().verifyWith(key).build().parseSignedClaims(token)
         }
     }
+    fun extractUserId(token: String): Long {
+        val claims = validateToken(token).getOrThrow().payload
+        return claims.subject.toLong()
+    }
 }

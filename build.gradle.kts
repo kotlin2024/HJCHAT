@@ -55,6 +55,10 @@ dependencies {
     //SMTP
     implementation ("org.springframework.boot:spring-boot-starter-mail")
 
+    //Web Socket
+    implementation ("org.springframework.boot:spring-boot-starter-websocket")
+
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.springframework:spring-webflux")

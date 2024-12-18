@@ -69,6 +69,7 @@ class OAuthService(
                 password = passwordEncoder.encode(member.password),
                 status = "ACTIVE",
                 memberRole = "USER",
+                chatRoomMembers = mutableListOf()
             )
         )
         emailVerifyRepository.delete(member)

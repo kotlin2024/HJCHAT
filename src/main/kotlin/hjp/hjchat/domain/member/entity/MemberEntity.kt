@@ -1,5 +1,6 @@
 package hjp.hjchat.domain.member.entity
 
+import hjp.hjchat.domain.chat.entity.ChatRoomMember
 import jakarta.persistence.*
 import java.time.LocalDate
 
@@ -8,6 +9,9 @@ import java.time.LocalDate
 class MemberEntity(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
+
+    @OneToMany(mappedBy = "member")
+    val chatRoomMembers: List<ChatRoomMember>,
 
     @Column(name="userName", unique = true, nullable = false)
     val userName: String,

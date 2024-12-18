@@ -13,6 +13,9 @@ class ChatRoom(
     @OneToMany(mappedBy = "chatRoom", cascade = [CascadeType.ALL], orphanRemoval = true)
     val messages: List<Message> = mutableListOf(),
 
+    @OneToMany(mappedBy = "chatRoom")
+    val members : List<ChatRoomMember>,
+
     @Column(name = "room_name")
     var roomName: String,
 

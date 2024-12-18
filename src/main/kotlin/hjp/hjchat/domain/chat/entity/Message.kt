@@ -14,7 +14,7 @@ class Message (
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    val userId: MemberEntity,
+    val userId : MemberEntity,
 
     @ManyToOne(fetch = FetchType.LAZY)
     val chatRoom: ChatRoom,

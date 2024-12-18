@@ -4,8 +4,10 @@ import graphql.kickstart.tools.GraphQLMutationResolver
 import graphql.kickstart.tools.GraphQLQueryResolver
 import hjp.hjchat.domain.chat.dto.MessageDto
 import hjp.hjchat.domain.chat.entity.ChatRoom
+import hjp.hjchat.domain.chat.entity.ChatRoomMember
 import hjp.hjchat.domain.chat.entity.Message
 import hjp.hjchat.domain.chat.entity.toResponse
+import hjp.hjchat.domain.chat.model.ChatRoomMemberRepository
 import hjp.hjchat.domain.chat.model.ChatRoomRepository
 import hjp.hjchat.domain.chat.model.MessageRepository
 import hjp.hjchat.infra.security.jwt.UserPrincipal
@@ -24,6 +26,7 @@ class ChatController(
     private val oAuthRepository: OAuthRepository,
     private val charRoomRepository: ChatRoomRepository,
     private val chatRoomRepository: ChatRoomRepository,
+    private val chatRoomMemberRepository: ChatRoomMemberRepository,
 ) : GraphQLQueryResolver, GraphQLMutationResolver {
 
     @QueryMapping
@@ -56,18 +59,55 @@ class ChatController(
 
     @MutationMapping
     fun createChatRoom(
+        @AuthenticationPrincipal user: UserPrincipal,
         @Argument roomName: String,
         @Argument roomType: String,
     ): ChatRoom {
+
+        val member = oAuthRepository.findById(user.memberId)
+            .orElseThrow { IllegalArgumentException("Member not found") }
 
         val chatRoom = chatRoomRepository.save(
             ChatRoom(
                 roomName = roomName,
                 roomType = roomType.toUpperCase(),
                 createdAt = LocalDateTime.now(),
-                updatedAt = null
+                updatedAt = null,
+                members = mutableListOf(),
             )
         )
+
+        chatRoomMemberRepository.save(
+            ChatRoomMember(
+                chatRoom = chatRoom,
+                member = member,
+            )
+        )
+
         return chatRoom
+    }
+
+    @MutationMapping
+    fun inviteUserToChatRoom(
+        @AuthenticationPrincipal user: UserPrincipal,
+        @Argument chatRoomId: Long,
+        @Argument userId: Long,
+    ): ChatRoomMember {
+
+        val member = oAuthRepository.findById(user.memberId)
+            .orElseThrow { IllegalArgumentException("Member not found") }
+
+        val chatRoom = chatRoomRepository.findById(chatRoomId)
+            .orElseThrow { IllegalArgumentException("Chat room not found") }
+
+        val invitedMember = oAuthRepository.findById(userId)
+            .orElseThrow { IllegalArgumentException("Invited member not found") }
+
+        return chatRoomMemberRepository.save(
+            ChatRoomMember(
+                chatRoom = chatRoom,
+                member = invitedMember,
+            )
+        )
     }
 }

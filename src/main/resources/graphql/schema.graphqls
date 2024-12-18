@@ -6,8 +6,18 @@ type Message {
 }
 
 type Mutation {
-    sendMessage(content: String!): Message
+    sendMessage(content: String!, chatRoomId: ID!): Message
+    createChatRoom(roomName: String!, roomType: String!): ChatRoom
 }
+
+type ChatRoom {
+    id: ID
+    roomName: String
+    roomType: String
+    createdAt: String
+    updatedAt: String
+}
+
 
 type Query {
     getMessages: [Message]

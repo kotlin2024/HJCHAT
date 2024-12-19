@@ -3,62 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Room</title>
+    <title>WebSocket Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #chatBox {
+            width: 400px;
+            height: 300px;
+            border: 1px solid #ccc;
+            margin: 20px 0;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        #inputMessage {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
-<h1>Chat Room</h1>
-<div id="messages"></div>
-<input type="text" id="messageInput" placeholder="Type your message here..." />
-<button id="sendMessage">Send</button>
+
+<h1>WebSocket Chat</h1>
+
+<!-- 로그인 섹션 -->
+<div id="loginSection">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username" required />
+    <input type="password" id="password" placeholder="Password" required />
+    <button onclick="login()">Login</button>
+</div>
+
+<!-- 채팅 섹션 -->
+<div id="chatSection" style="display: none;">
+    <h2>Chat Room</h2>
+    <div id="chatBox"></div>
+    <input type="text" id="inputMessage" placeholder="Type a message..." />
+    <button onclick="sendMessage()">Send</button>
+</div>
 
 <script>
-    // 로그인 후 쿠키에서 access token을 가져오는 함수
-    function getAccessTokenFromCookies() {
-        const cookies = document.cookie.split("; ");
-        for (let cookie of cookies) {
-            if (cookie.startsWith("accessToken=")) {
-                return cookie.split("=")[1];
-            }
+    let ws;
+    let accessToken = '';
+
+    // 로그인 함수
+    function login() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        fetch('http://localhost:8080/api/oauth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('로그인 실패');
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('chatSection').style.display = 'block';
+                initializeWebSocket();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('로그인 실패: ' + error.message);
+            });
+    }
+
+    // WebSocket 초기화 함수
+    function initializeWebSocket() {
+        // WebSocket 연결 시 Access Token을 Authorization 헤더에 포함
+        const socketUrl = `ws://localhost:8080/ws`;
+        const socket = new WebSocket(socketUrl);
+
+        // WebSocket 연결 시 Authorization 헤더 포함
+        socket.onopen = () => {
+            // Authorization 헤더를 포함하여 WebSocket 연결
+            socket.send(JSON.stringify({ type: 'authenticate', token: accessToken }));
+            console.log('WebSocket connected');
+        };
+
+        socket.onmessage = (event) => {
+            const message = event.data;
+            const chatBox = document.getElementById('chatBox');
+            chatBox.innerHTML += `<p>${message}</p>`;
+            chatBox.scrollTop = chatBox.scrollHeight; // 최신 메시지로 스크롤 이동
+        };
+
+        socket.onclose = () => {
+            console.log('WebSocket connection closed');
+        };
+
+        socket.onerror = (error) => {
+            console.error('WebSocket Error:', error);
+        };
+
+        ws = socket;
+    }
+
+    // 메시지 전송 함수
+    function sendMessage() {
+        const message = document.getElementById('inputMessage').value;
+        if (message) {
+            ws.send(message); // WebSocket을 통해 메시지 전송
+            document.getElementById('inputMessage').value = ''; // 입력 필드 초기화
         }
-        return null;
     }
-
-    const token = getAccessTokenFromCookies();  // 쿠키에서 토큰을 가져옴
-    if (!token) {
-        alert("You must be logged in to access the chat room.");
-        window.location.href = '/login.html';  // 로그인 페이지로 리다이렉트
-    }
-
-    // WebSocket 서버 URL에 토큰을 쿼리 파라미터로 전달
-    const socketUrl = `ws://localhost:8080/chat?accessToken=${token}`;
-
-    const socket = new WebSocket(socketUrl);
-
-    socket.onopen = function(event) {
-        console.log("Connected to WebSocket server");
-
-        document.getElementById("sendMessage").addEventListener("click", function() {
-            const message = document.getElementById("messageInput").value;
-            if (message) {
-                socket.send(JSON.stringify({ content: message }));
-                document.getElementById("messageInput").value = "";
-            }
-        });
-    };
-
-    socket.onmessage = function(event) {
-        const message = event.data;
-        const messagesDiv = document.getElementById("messages");
-        messagesDiv.innerHTML += `<p>${message}</p>`;
-    };
-
-    socket.onerror = function(error) {
-        console.error("WebSocket Error:", error);
-    };
-
-    socket.onclose = function(event) {
-        console.log("Disconnected from WebSocket server");
-    };
 </script>
 </body>
 </html>

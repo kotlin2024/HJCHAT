@@ -24,7 +24,7 @@ class JwtWebSocketInterceptor(
             val memberRole = claims.body.get(JwtTokenManager.MEMBER_ROLE_KEY, String::class.java)
 
             val userPrincipal = UserPrincipal(memberId = memberId, memberRole = setOf(memberRole))
-            val authentication = JwtAuthenticationToken(userPrincipal, null) // WebAuthenticationDetails는 null 가능
+            val authentication = JwtAuthenticationToken(userPrincipal, null)
             SecurityContextHolder.getContext().authentication = authentication
         }.onFailure {
             throw AccessDeniedException("Invalid JWT Token")

@@ -18,8 +18,8 @@ import org.springframework.graphql.data.method.annotation.QueryMapping
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Controller
+import org.springframework.web.bind.annotation.CrossOrigin
 import java.time.LocalDateTime
-
 
 @Controller
 class ChatController(
@@ -28,12 +28,14 @@ class ChatController(
     private val charRoomRepository: ChatRoomRepository,
     private val chatRoomRepository: ChatRoomRepository,
     private val chatRoomMemberRepository: ChatRoomMemberRepository,
+    private val messagingTemplate: SimpMessagingTemplate
 ) : GraphQLQueryResolver, GraphQLMutationResolver {
 
     @QueryMapping
     fun getMessages(): List<MessageDto> {
         return messageRepository.findAll().map { it.toResponse() }
     }
+
 
     @MutationMapping
     fun sendMessage(
@@ -55,6 +57,8 @@ class ChatController(
                 chatRoom = chatRoom
             )
         )
+
+        messagingTemplate.convertAndSend("/topic/chatroom/$chatRoomId", savedMessage.toResponse())
 
 
         return savedMessage.toResponse()
@@ -91,26 +95,39 @@ class ChatController(
     }
 
     @MutationMapping
-    fun inviteUserToChatRoom(
+    fun addUser(
         @AuthenticationPrincipal user: UserPrincipal,
         @Argument chatRoomId: Long,
-        @Argument userId: Long,
     ): ChatRoomMember {
-
+        // 사용자와 채팅방 검증
         val member = oAuthRepository.findById(user.memberId)
             .orElseThrow { IllegalArgumentException("Member not found") }
 
         val chatRoom = chatRoomRepository.findById(chatRoomId)
             .orElseThrow { IllegalArgumentException("Chat room not found") }
 
-        val invitedMember = oAuthRepository.findById(userId)
-            .orElseThrow { IllegalArgumentException("Invited member not found") }
+        // 이미 사용자가 채팅방에 추가되어 있는지 확인
+        if (chatRoomMemberRepository.existsByChatRoomIdAndMember(chatRoomId, member)) {
+            throw IllegalArgumentException("User already in chat room")
+        }
 
-        return chatRoomMemberRepository.save(
+        // 사용자 추가
+        val chatRoomMember = chatRoomMemberRepository.save(
             ChatRoomMember(
                 chatRoom = chatRoom,
-                member = invitedMember,
+                member = member,
             )
         )
+
+        // 사용자 입장 알림 메시지 브로드캐스트
+        val joinMessage = Message(
+            content = "${member.userName} 님이 채팅방에 입장하셨습니다.",
+            userId = member, // 시스템 메시지로 설정
+            chatRoom = chatRoom
+        )
+
+        messagingTemplate.convertAndSend("/topic/chatroom/$chatRoomId", joinMessage.toResponse())
+
+        return chatRoomMember
     }
 }

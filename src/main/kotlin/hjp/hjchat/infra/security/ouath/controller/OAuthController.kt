@@ -18,12 +18,13 @@ class OAuthController(
 ) {
 
     @PostMapping("/signup")
-    fun signUp(@RequestBody request: SignUpRequest):ResponseEntity<String> {
+    fun signUp(@RequestBody request: SignUpRequest): ResponseEntity<String> {
         return ResponseEntity.status(HttpStatus.OK).body(oAuthService.signUp(request))
     }
 
     @PostMapping("/login")
-    fun login(@RequestBody request: LoginRequest, response: HttpServletResponse): ResponseEntity<String> {
+    fun login(@RequestBody request: LoginRequest, response: HttpServletResponse): ResponseEntity<
+            Map<String, String>> {
 
         val tokenResponse = oAuthService.login(request)
 
@@ -39,9 +40,13 @@ class OAuthController(
         }
         response.addCookie(refreshTokenCookie)
 
+        val messageJson = mapOf(
+            "message" to "토큰 발급 성공"
+        )
+
         return ResponseEntity.ok()
             .headers(headers)
-            .body("토큰 발급 성공")
+            .body(messageJson)
     }
 
     @GetMapping("/verify-email")
@@ -50,7 +55,7 @@ class OAuthController(
     }
 
     @PostMapping("/social-login")
-    fun socialLogin(){
+    fun socialLogin() {
         //TODO()
     }
 }

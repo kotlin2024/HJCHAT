@@ -15,6 +15,7 @@ import hjp.hjchat.infra.security.ouath.model.OAuthRepository
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.MutationMapping
 import org.springframework.graphql.data.method.annotation.QueryMapping
+import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Controller
 import java.time.LocalDateTime
@@ -54,6 +55,8 @@ class ChatController(
                 chatRoom = chatRoom
             )
         )
+
+
         return savedMessage.toResponse()
     }
 

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room</title>
+</head>
+<body>
+<h1>Chat Room</h1>
+<div id="messages"></div>
+<input type="text" id="messageInput" placeholder="Type your message here..." />
+<button id="sendMessage">Send</button>
+
+<script>
+    // 로그인 후 쿠키에서 access token을 가져오는 함수
+    function getAccessTokenFromCookies() {
+        const cookies = document.cookie.split("; ");
+        for (let cookie of cookies) {
+            if (cookie.startsWith("accessToken=")) {
+                return cookie.split("=")[1];
+            }
+        }
+        return null;
+    }
+
+    const token = getAccessTokenFromCookies();  // 쿠키에서 토큰을 가져옴
+    if (!token) {
+        alert("You must be logged in to access the chat room.");
+        window.location.href = '/login.html';  // 로그인 페이지로 리다이렉트
+    }
+
+    // WebSocket 서버 URL에 토큰을 쿼리 파라미터로 전달
+    const socketUrl = `ws://localhost:8080/chat?accessToken=${token}`;
+
+    const socket = new WebSocket(socketUrl);
+
+    socket.onopen = function(event) {
+        console.log("Connected to WebSocket server");
+
+        document.getElementById("sendMessage").addEventListener("click", function() {
+            const message = document.getElementById("messageInput").value;
+            if (message) {
+                socket.send(JSON.stringify({ content: message }));
+                document.getElementById("messageInput").value = "";
+            }
+        });
+    };
+
+    socket.onmessage = function(event) {
+        const message = event.data;
+        const messagesDiv = document.getElementById("messages");
+        messagesDiv.innerHTML += `<p>${message}</p>`;
+    };
+
+    socket.onerror = function(error) {
+        console.error("WebSocket Error:", error);
+    };
+
+    socket.onclose = function(event) {
+        console.log("Disconnected from WebSocket server");
+    };
+</script>
+</body>
+</html>

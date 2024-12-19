@@ -21,6 +21,7 @@ import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.CrossOrigin
 import java.time.LocalDateTime
 
+@CrossOrigin(origins = ["http://localhost:63342"])
 @Controller
 class ChatController(
     private val messageRepository: MessageRepository,

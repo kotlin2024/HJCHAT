@@ -10,16 +10,20 @@ import hjp.hjchat.domain.chat.entity.toResponse
 import hjp.hjchat.domain.chat.model.ChatRoomMemberRepository
 import hjp.hjchat.domain.chat.model.ChatRoomRepository
 import hjp.hjchat.domain.chat.model.MessageRepository
+import hjp.hjchat.domain.member.entity.MemberEntity
 import hjp.hjchat.infra.security.jwt.UserPrincipal
 import hjp.hjchat.infra.security.ouath.model.OAuthRepository
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.MutationMapping
 import org.springframework.graphql.data.method.annotation.QueryMapping
+import org.springframework.messaging.handler.annotation.MessageMapping
+import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.CrossOrigin
 import java.time.LocalDateTime
+import kotlin.jvm.optionals.getOrElse
 
 @CrossOrigin(origins = ["http://localhost:63342"])
 @Controller
@@ -29,7 +33,7 @@ class ChatController(
     private val charRoomRepository: ChatRoomRepository,
     private val chatRoomRepository: ChatRoomRepository,
     private val chatRoomMemberRepository: ChatRoomMemberRepository,
-    private val messagingTemplate: SimpMessagingTemplate
+    private val messagingTemplate: SimpMessagingTemplate,
 ) : GraphQLQueryResolver, GraphQLMutationResolver {
 
     @QueryMapping
@@ -38,31 +42,26 @@ class ChatController(
     }
 
 
-    @MutationMapping
+    @MessageMapping("/send")
     fun sendMessage(
-        @AuthenticationPrincipal user: UserPrincipal,
-        @Argument content: String,
-        @Argument chatRoomId: Long
-    ): MessageDto {
-
-        val member = oAuthRepository.findById(user.memberId)
-            .orElseThrow { IllegalArgumentException("Member not found") }
-
-        val chatRoom = chatRoomRepository.findById(chatRoomId)
+        @Payload message: MessageDto,
+        @AuthenticationPrincipal user: UserPrincipal
+    ) {
+        val chatRoom = chatRoomRepository.findById(message.chatRoomId)
             .orElseThrow { IllegalArgumentException("Chat room not found") }
 
+        val memberId = user.memberId
+        val member = oAuthRepository.findById(memberId)
+            .orElseThrow { IllegalArgumentException("Member not found") }
         val savedMessage = messageRepository.save(
             Message(
-                content = content,
+                content = message.content,
                 userId = member,
                 chatRoom = chatRoom
             )
         )
 
-        messagingTemplate.convertAndSend("/topic/chatroom/$chatRoomId", savedMessage.toResponse())
-
-
-        return savedMessage.toResponse()
+        messagingTemplate.convertAndSend("/topic/chatroom/${message.chatRoomId}", savedMessage.toResponse())
     }
 
     @MutationMapping

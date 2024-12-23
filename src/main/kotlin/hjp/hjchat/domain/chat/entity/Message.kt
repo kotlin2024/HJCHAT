@@ -42,7 +42,8 @@ fun Message.toResponse(): MessageDto {
     return MessageDto(
         id = id!!,
         content = content,
-        sender =  userId.userName,
+        sender =  userId.id,
         timestamp = createdAt.toString(),
+        chatRoomId = chatRoom.id!!
     )
 }

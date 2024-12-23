@@ -80,13 +80,12 @@
 
     // WebSocket 초기화 함수
     function initializeWebSocket() {
-        // WebSocket 연결 시 Access Token을 Authorization 헤더에 포함
         const socketUrl = 'ws://localhost:8080/ws';
         const socket = new WebSocket(socketUrl);
 
-        // WebSocket 연결 시 Authorization 헤더 포함
+
         socket.onopen = () => {
-            // Authorization 헤더를 포함하여 WebSocket 연결
+
             socket.send(JSON.stringify({ type: 'authenticate', token: accessToken }));
             console.log('WebSocket connected');
         };
@@ -95,7 +94,7 @@
             const message = event.data;
             const chatBox = document.getElementById('chatBox');
             chatBox.innerHTML += `<p>${message}</p>`;
-            chatBox.scrollTop = chatBox.scrollHeight; // 최신 메시지로 스크롤 이동
+            chatBox.scrollTop = chatBox.scrollHeight;
         };
 
         socket.onclose = () => {
@@ -109,12 +108,12 @@
         ws = socket;
     }
 
-    // 메시지 전송 함수
+
     function sendMessage() {
         const message = document.getElementById('inputMessage').value;
         if (message) {
-            ws.send(message); // WebSocket을 통해 메시지 전송
-            document.getElementById('inputMessage').value = ''; // 입력 필드 초기화
+            ws.send(message);
+            document.getElementById('inputMessage').value = '';
         }
     }
 </script>

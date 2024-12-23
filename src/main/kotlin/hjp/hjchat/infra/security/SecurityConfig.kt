@@ -39,6 +39,7 @@ class SecurityConfig(
                     "/graphiql?path=/graphql",
                     "/api/oauth/**",
                     "/graphql",
+                    "/ws/**",
                 ).permitAll()
                     .requestMatchers(HttpMethod.GET, "/**").permitAll()
                     .anyRequest().authenticated()

@@ -17,30 +17,30 @@ import java.time.LocalDateTime
 @Service
 class ChatService(
     private val chatRoomRepository: ChatRoomRepository,
-    private val oAuthRepository: OAuthRepository,
     private val messageRepository: MessageRepository,
     private val chatRoomMemberRepository: ChatRoomMemberRepository,
+    private val oAuthRepository: OAuthRepository,
     private val messagingTemplate: SimpMessagingTemplate
 ) {
 
+
     fun processMessage(message: MessageDto, user: UserPrincipal): Message {
-        // 채팅방 확인
         val chatRoom = chatRoomRepository.findById(message.chatRoomId)
             .orElseThrow { IllegalArgumentException("Chat room not found") }
 
-        // 사용자 확인
         val member = oAuthRepository.findById(user.memberId)
             .orElseThrow { IllegalArgumentException("Member not found") }
 
-        // 메시지 저장
-        return messageRepository.save(
+        val savedMessage = messageRepository.save(
             Message(
                 content = message.content,
                 userId = member,
-                chatRoom = chatRoom
+                chatRoom = chatRoom,
             )
         )
+        return savedMessage
     }
+
 
     fun createChatRoom(memberId: Long, roomName: String, roomType: String): ChatRoom {
         val member = oAuthRepository.findById(memberId)
@@ -51,7 +51,6 @@ class ChatService(
                 roomName = roomName,
                 roomType = roomType.uppercase(),
                 createdAt = LocalDateTime.now(),
-                updatedAt = null,
                 members = mutableListOf()
             )
         )
@@ -59,38 +58,52 @@ class ChatService(
         chatRoomMemberRepository.save(
             ChatRoomMember(
                 chatRoom = chatRoom,
-                member = member
+                member = member,
+                joinedAt = LocalDateTime.now()
             )
         )
+
         return chatRoom
     }
 
-    fun addUserToChatRoom(memberId: Long, chatRoomId: Long): ChatRoomMember {
-        val member = oAuthRepository.findById(memberId)
-            .orElseThrow { IllegalArgumentException("Member not found") }
-
+    fun addUserToChatRoom(chatRoomId: Long, userName: String, inviter: UserPrincipal): ChatRoomMember {
         val chatRoom = chatRoomRepository.findById(chatRoomId)
             .orElseThrow { IllegalArgumentException("Chat room not found") }
 
-        if (chatRoomMemberRepository.existsByChatRoomIdAndMember(chatRoomId, member)) {
-            throw IllegalArgumentException("User already in chat room")
+        val invitedMember = oAuthRepository.findByUserName(userName)
+            ?: throw IllegalArgumentException("User not found")
+
+        if (chatRoomMemberRepository.existsByChatRoomIdAndMember(chatRoomId, invitedMember)) {
+            throw IllegalArgumentException("User is already in the chat room")
         }
 
         val chatRoomMember = chatRoomMemberRepository.save(
             ChatRoomMember(
                 chatRoom = chatRoom,
-                member = member
+                member = invitedMember,
+                joinedAt = LocalDateTime.now()
             )
         )
 
-        val joinMessage = Message(
-            content = "${member.userName} 님이 채팅방에 입장하셨습니다.",
-            userId = member,
+        val inviteMessage = Message(
+            content = "${invitedMember.userName} has been invited to the chat room.",
+            userId = invitedMember,
             chatRoom = chatRoom
         )
-
-        messagingTemplate.convertAndSend("/topic/chatroom/$chatRoomId", joinMessage.toResponse())
+        messageRepository.save(inviteMessage)
+        messagingTemplate.convertAndSend("/topic/chatroom/$chatRoomId", inviteMessage.toResponse())
 
         return chatRoomMember
+    }
+
+    fun checkRoomAccess(chatRoomId: Long, userId: Long): Boolean {
+        val chatRoom = chatRoomRepository.findById(chatRoomId)
+            .orElseThrow { IllegalArgumentException("Chat room not found") }
+
+        return when (chatRoom.roomType.uppercase()) {
+            "PUBLIC" -> true
+            "PRIVATE" -> chatRoomMemberRepository.existsByChatRoomIdAndMemberId(chatRoomId, userId)
+            else -> throw IllegalArgumentException("Invalid room type")
+        }
     }
 }

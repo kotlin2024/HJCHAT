@@ -8,6 +8,7 @@
         body {
             font-family: Arial, sans-serif;
         }
+
         #chatBox {
             width: 400px;
             height: 300px;
@@ -16,21 +17,23 @@
             padding: 10px;
             overflow-y: auto;
         }
+
         #inputMessage {
             width: 100%;
             padding: 10px;
             margin-top: 10px;
         }
+
         #chatRooms {
             margin: 20px 0;
         }
+
         #createRoomBtn {
             margin-top: 10px;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
-
 </head>
 <body>
 
@@ -48,12 +51,30 @@
 <div id="chatSection" style="display: none;">
     <h2>Chat Room</h2>
     <div id="chatRooms">
-        <button id="createRoomBtn" onclick="createChatRoom()">Create Chat Room</button>
+        <h3>Available Chat Rooms</h3>
         <div id="roomList"></div>
+        <button id="createRoomBtn" onclick="showCreateRoomModal()">Create Chat Room</button>
     </div>
+
     <div id="chatBox"></div>
     <input type="text" id="inputMessage" placeholder="Type a message..." />
     <button onclick="sendMessage()">Send</button>
+</div>
+
+<!-- 채팅방 생성 섹션 -->
+<div id="createRoomSection" style="display: none;">
+    <h3>Create Chat Room</h3>
+    <input type="text" id="roomName" placeholder="Enter room name" />
+    <div>
+        <label>
+            <input type="radio" name="roomType" value="PUBLIC" checked /> Public
+        </label>
+        <label>
+            <input type="radio" name="roomType" value="PRIVATE" /> Private
+        </label>
+    </div>
+    <button onclick="createChatRoom()">Create</button>
+    <button onclick="hideCreateRoomModal()">Cancel</button>
 </div>
 
 <script>
@@ -74,25 +95,22 @@
             body: JSON.stringify({ username, password }),
         })
             .then(response => {
-                // 응답 상태 확인
                 if (!response.ok) {
                     throw new Error(`로그인 실패: 서버 응답 상태 ${response.status}`);
                 }
 
-                // Authorization 헤더 추출
                 const token = response.headers.get('Authorization')?.split(' ')[1];
                 if (!token) {
                     throw new Error('로그인 실패: Authorization 헤더가 비어있음');
                 }
 
-                accessToken = token; // 토큰 저장
+                accessToken = token;
 
-                // 로그인 성공 후 UI 업데이트
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('chatSection').style.display = 'block';
 
-                initializeWebSocket(); // WebSocket 초기화
-                loadChatRooms(); // 채팅방 목록 로드
+                initializeWebSocket();
+                loadChatRooms();
             })
             .catch(error => {
                 console.error('로그인 실패:', error);
@@ -100,33 +118,27 @@
             });
     }
 
-
-    // WebSocket 초기화 함수
+    // WebSocket 초기화
     function initializeWebSocket() {
-        const socket = new SockJS(`http://localhost:8080/ws?token=${accessToken}`); // Query Parameter로 토큰 전달
+        const socket = new SockJS(`http://localhost:8080/ws?token=${accessToken}`);
         ws = Stomp.over(socket);
 
-        ws.connect(
-            {},
-            function (frame) {
-                console.log("WebSocket 연결 성공:", frame);
+        ws.connect({}, function (frame) {
+            console.log("WebSocket 연결 성공:", frame);
 
-                if (currentChatRoomId) {
-                    ws.subscribe(`/topic/chatroom/${currentChatRoomId}`, function (message) {
-                        const receivedMessage = JSON.parse(message.body);
-                        displayMessage(receivedMessage);
-                    });
-                }
-            },
-            function (error) {
-                console.error("WebSocket 연결 실패:", error);
-                alert("WebSocket 연결 실패");
+            if (currentChatRoomId) {
+                ws.subscribe(`/topic/chatroom/${currentChatRoomId}`, function (message) {
+                    const receivedMessage = JSON.parse(message.body);
+                    displayMessage(receivedMessage);
+                });
             }
-        );
+        }, function (error) {
+            console.error("WebSocket 연결 실패:", error);
+            alert("WebSocket 연결 실패");
+        });
     }
 
-
-    // 채팅방 목록 로드 함수
+    // 채팅방 목록 로드
     function loadChatRooms() {
         fetch('http://localhost:8080/graphql', {
             method: 'POST',
@@ -147,13 +159,14 @@
             .then(response => response.json())
             .then(data => {
                 const roomList = document.getElementById('roomList');
-                roomList.innerHTML = ''; // 기존 목록 초기화
+                roomList.innerHTML = '';
                 const rooms = data.data.getChatRooms;
 
                 rooms.forEach(room => {
-                    const roomElement = document.createElement('button');
-                    roomElement.innerText = room.roomName;
-                    roomElement.onclick = () => joinChatRoom(room.id);
+                    const roomElement = document.createElement('div');
+                    roomElement.innerHTML = `
+                        <button onclick="joinChatRoom(${room.id}, '${room.roomName}')">${room.roomName} (${room.roomType})</button>
+                    `;
                     roomList.appendChild(roomElement);
                 });
             })
@@ -163,50 +176,30 @@
             });
     }
 
-    // 채팅방 입장 함수
-    function joinChatRoom(roomId) {
+    // 채팅방 입장
+    function joinChatRoom(roomId, roomName) {
         currentChatRoomId = roomId;
-        alert(`"${currentChatRoomId}" 채팅방에 입장했습니다.`);
-        document.getElementById('chatBox').innerHTML = ''; // 채팅창 초기화
 
-        // 기존 구독 해제 및 새로 구독
+        alert(`"${roomName}" 채팅방에 입장했습니다.`);
+        document.getElementById('chatBox').innerHTML = '';
+
         if (ws) {
-            ws.subscribe(`/topic/chatroom/${currentChatRoomId}`, function (message) {
+            ws.subscribe(`/topic/chatroom/${roomId}`, function (message) {
                 const receivedMessage = JSON.parse(message.body);
                 displayMessage(receivedMessage);
             });
         }
     }
 
-    // 메시지 전송 함수
-    function sendMessage() {
-        const messageContent = document.getElementById('inputMessage').value;
-        if (messageContent && currentChatRoomId && ws) {
-            const message = {
-                chatRoomId: currentChatRoomId,
-                content: messageContent,
-            };
-
-            ws.send(`/app/send`, {}, JSON.stringify(message)); // 메시지 전송
-            document.getElementById('inputMessage').value = ''; // 입력란 초기화
-        } else {
-            alert('메시지를 입력하거나 채팅방을 선택해주세요.');
-        }
-    }
-
-    // 메시지 표시 함수
-    function displayMessage(message) {
-        const chatBox = document.getElementById('chatBox');
-        const messageElement = document.createElement('div');
-        messageElement.innerText = `[${message.sender}] ${message.content}`;
-        chatBox.appendChild(messageElement);
-        chatBox.scrollTop = chatBox.scrollHeight; // 스크롤 하단으로 이동
-    }
-
-    // 채팅방 생성 함수
+    // 채팅방 생성
     function createChatRoom() {
-        const roomName = prompt('채팅방 이름을 입력하세요');
-        const roomType = prompt('채팅방 유형을 입력하세요 (PUBLIC/PRIVATE)');
+        const roomName = document.getElementById('roomName').value;
+        const roomType = document.querySelector('input[name="roomType"]:checked').value;
+
+        if (!roomName || !roomType) {
+            alert('Please provide a room name and select a room type.');
+            return;
+        }
 
         fetch('http://localhost:8080/graphql', {
             method: 'POST',
@@ -227,16 +220,62 @@
             .then(response => response.json())
             .then(data => {
                 const chatRoom = data.data.createChatRoom;
-                alert(`채팅방 "${chatRoom.roomName}"이 생성되었습니다.`);
-                loadChatRooms(); // 채팅방 목록 갱신
+                alert(`Chat room "${chatRoom.roomName}" created as ${chatRoom.roomType.toLowerCase()}!`);
+                hideCreateRoomModal();
+                loadChatRooms();
             })
             .catch(error => {
-                console.error('채팅방 생성 실패:', error);
-                alert('채팅방 생성 실패: ' + error.message);
+                console.error('Chat room creation failed:', error);
+                alert('Chat room creation failed: ' + error.message);
             });
     }
-</script>
 
+    function showCreateRoomModal() {
+        document.getElementById('createRoomSection').style.display = 'block';
+    }
+
+    function hideCreateRoomModal() {
+        document.getElementById('createRoomSection').style.display = 'none';
+    }
+
+    // 메시지 전송
+    function sendMessage() {
+        const messageContent = document.getElementById('inputMessage').value; // 입력된 메시지
+        console.log("Message content:", messageContent);
+        console.log("Current Chat Room ID:", currentChatRoomId);
+        console.log("WebSocket status:", ws ? "Connected" : "Not Connected");
+
+        if (messageContent.trim() && currentChatRoomId && ws) {
+            const message = {
+                chatRoomId: currentChatRoomId,
+                content: messageContent,
+                senderName: localStorage.getItem('userName') || "Unknown"
+            };
+
+            ws.send(`/app/send`, {}, JSON.stringify(message)); // 메시지 전송
+            document.getElementById('inputMessage').value = ''; // 입력 필드 초기화
+        } else {
+            if (!messageContent.trim()) {
+                alert('메시지를 입력해주세요.');
+            } else if (!currentChatRoomId) {
+                alert('채팅방을 선택해주세요.');
+            } else if (!ws) {
+                alert('WebSocket이 연결되지 않았습니다.');
+            }
+        }
+    }
+
+
+
+    // 메시지 표시
+    function displayMessage(message) {
+        const chatBox = document.getElementById('chatBox');
+        const messageElement = document.createElement('div');
+        messageElement.innerHTML = `<strong>${message.senderName}:</strong> ${message.content}`;
+        chatBox.appendChild(messageElement);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+</script>
 
 </body>
 </html>

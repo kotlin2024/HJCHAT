@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 interface ChatRoomMemberRepository : JpaRepository<ChatRoomMember, Long> {
 
     fun existsByChatRoomIdAndMember(chatRoomId: Long, member: MemberEntity): Boolean
+
+    fun existsByChatRoomIdAndMemberId(chatRoomId: Long, userId: Long): Boolean
 }

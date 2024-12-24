@@ -44,6 +44,7 @@ fun Message.toResponse(): MessageDto {
         content = content,
         sender =  userId.id,
         timestamp = createdAt.toString(),
-        chatRoomId = chatRoom.id!!
+        chatRoomId = chatRoom.id!!,
+        senderName = userId.userName
     )
 }

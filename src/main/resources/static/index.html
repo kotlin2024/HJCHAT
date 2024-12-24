@@ -34,7 +34,7 @@
 </head>
 <body>
 
-<h1>WebSocket Chat</h1>
+<h1>HJ Chat</h1>
 
 <!-- 로그인 섹션 -->
 <div id="loginSection">
@@ -86,7 +86,6 @@
                 }
 
                 accessToken = token; // 토큰 저장
-                console.log('AccessToken:', accessToken);
 
                 // 로그인 성공 후 UI 업데이트
                 document.getElementById('loginSection').style.display = 'none';
@@ -125,9 +124,6 @@
             }
         );
     }
-
-
-
 
 
     // 채팅방 목록 로드 함수

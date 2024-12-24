@@ -12,6 +12,7 @@ class WebConfig : WebMvcConfigurer {
             .allowedOriginPatterns("http://localhost:63342")  // 허용할 클라이언트 URL
             .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")  // 허용할 HTTP 메서드들
             .allowedHeaders("*")  // 모든 헤더를 허용
+            .exposedHeaders("Authorization")
             .allowCredentials(true)  // 쿠키를 허용하려면 true로 설정
     }
 }

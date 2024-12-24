@@ -10,9 +10,9 @@ import hjp.hjchat.domain.chat.entity.toResponse
 import hjp.hjchat.domain.chat.model.ChatRoomMemberRepository
 import hjp.hjchat.domain.chat.model.ChatRoomRepository
 import hjp.hjchat.domain.chat.model.MessageRepository
-import hjp.hjchat.domain.member.entity.MemberEntity
 import hjp.hjchat.infra.security.jwt.UserPrincipal
 import hjp.hjchat.infra.security.ouath.model.OAuthRepository
+import jakarta.transaction.Transactional
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.MutationMapping
 import org.springframework.graphql.data.method.annotation.QueryMapping
@@ -37,12 +37,12 @@ class ChatController(
 ) : GraphQLQueryResolver, GraphQLMutationResolver {
 
     @QueryMapping
-    fun getMessages(): List<MessageDto> {
-        return messageRepository.findAll().map { it.toResponse() }
+    fun getChatRooms(): List<ChatRoom> {
+        return chatRoomRepository.findAll()
     }
 
-
     @MessageMapping("/send")
+    @Transactional
     fun sendMessage(
         @Payload message: MessageDto,
         @AuthenticationPrincipal user: UserPrincipal

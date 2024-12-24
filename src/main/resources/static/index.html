@@ -21,9 +21,16 @@
             padding: 10px;
             margin-top: 10px;
         }
+        #chatRooms {
+            margin: 20px 0;
+        }
+        #createRoomBtn {
+            margin-top: 10px;
+        }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.2/dist/sockjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@5.3.0/dist/stomp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+
 </head>
 <body>
 
@@ -40,14 +47,19 @@
 <!-- 채팅 섹션 -->
 <div id="chatSection" style="display: none;">
     <h2>Chat Room</h2>
+    <div id="chatRooms">
+        <button id="createRoomBtn" onclick="createChatRoom()">Create Chat Room</button>
+        <div id="roomList"></div>
+    </div>
     <div id="chatBox"></div>
     <input type="text" id="inputMessage" placeholder="Type a message..." />
     <button onclick="sendMessage()">Send</button>
 </div>
 
 <script>
-    let ws;
-    let accessToken = '';
+    let ws = null; // WebSocket 객체 전역 선언
+    let accessToken = ''; // AccessToken 저장
+    let currentChatRoomId = null; // 현재 채팅방 ID
 
     // 로그인 함수
     function login() {
@@ -57,65 +69,178 @@
         fetch('http://localhost:8080/api/oauth/login', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ username, password }),
         })
             .then(response => {
+                // 응답 상태 확인
                 if (!response.ok) {
-                    throw new Error('로그인 실패');
+                    throw new Error(`로그인 실패: 서버 응답 상태 ${response.status}`);
                 }
-                return response.json();
-            })
-            .then(data => {
+
+                // Authorization 헤더 추출
+                const token = response.headers.get('Authorization')?.split(' ')[1];
+                if (!token) {
+                    throw new Error('로그인 실패: Authorization 헤더가 비어있음');
+                }
+
+                accessToken = token; // 토큰 저장
+                console.log('AccessToken:', accessToken);
+
+                // 로그인 성공 후 UI 업데이트
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('chatSection').style.display = 'block';
-                initializeWebSocket();
+
+                initializeWebSocket(); // WebSocket 초기화
+                loadChatRooms(); // 채팅방 목록 로드
             })
             .catch(error => {
-                console.error('Error:', error);
-                alert('로그인 실패: ' + error.message);
+                console.error('로그인 실패:', error);
+                alert(error.message);
             });
     }
 
+
     // WebSocket 초기화 함수
     function initializeWebSocket() {
-        const socketUrl = 'ws://localhost:8080/ws';
-        const socket = new WebSocket(socketUrl);
+        const socket = new SockJS(`http://localhost:8080/ws?token=${accessToken}`); // Query Parameter로 토큰 전달
+        ws = Stomp.over(socket);
 
+        ws.connect(
+            {},
+            function (frame) {
+                console.log("WebSocket 연결 성공:", frame);
 
-        socket.onopen = () => {
-
-            socket.send(JSON.stringify({ type: 'authenticate', token: accessToken }));
-            console.log('WebSocket connected');
-        };
-
-        socket.onmessage = (event) => {
-            const message = event.data;
-            const chatBox = document.getElementById('chatBox');
-            chatBox.innerHTML += `<p>${message}</p>`;
-            chatBox.scrollTop = chatBox.scrollHeight;
-        };
-
-        socket.onclose = () => {
-            console.log('WebSocket connection closed');
-        };
-
-        socket.onerror = (error) => {
-            console.error('WebSocket Error:', error);
-        };
-
-        ws = socket;
+                if (currentChatRoomId) {
+                    ws.subscribe(`/topic/chatroom/${currentChatRoomId}`, function (message) {
+                        const receivedMessage = JSON.parse(message.body);
+                        displayMessage(receivedMessage);
+                    });
+                }
+            },
+            function (error) {
+                console.error("WebSocket 연결 실패:", error);
+                alert("WebSocket 연결 실패");
+            }
+        );
     }
 
 
-    function sendMessage() {
-        const message = document.getElementById('inputMessage').value;
-        if (message) {
-            ws.send(message);
-            document.getElementById('inputMessage').value = '';
+
+
+
+    // 채팅방 목록 로드 함수
+    function loadChatRooms() {
+        fetch('http://localhost:8080/graphql', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({
+                query: `query {
+                    getChatRooms {
+                        id
+                        roomName
+                        roomType
+                    }
+                }`
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                const roomList = document.getElementById('roomList');
+                roomList.innerHTML = ''; // 기존 목록 초기화
+                const rooms = data.data.getChatRooms;
+
+                rooms.forEach(room => {
+                    const roomElement = document.createElement('button');
+                    roomElement.innerText = room.roomName;
+                    roomElement.onclick = () => joinChatRoom(room.id);
+                    roomList.appendChild(roomElement);
+                });
+            })
+            .catch(error => {
+                console.error('채팅방 목록 로드 실패:', error);
+                alert('채팅방 목록 로드 실패: ' + error.message);
+            });
+    }
+
+    // 채팅방 입장 함수
+    function joinChatRoom(roomId) {
+        currentChatRoomId = roomId;
+        alert(`"${currentChatRoomId}" 채팅방에 입장했습니다.`);
+        document.getElementById('chatBox').innerHTML = ''; // 채팅창 초기화
+
+        // 기존 구독 해제 및 새로 구독
+        if (ws) {
+            ws.subscribe(`/topic/chatroom/${currentChatRoomId}`, function (message) {
+                const receivedMessage = JSON.parse(message.body);
+                displayMessage(receivedMessage);
+            });
         }
     }
+
+    // 메시지 전송 함수
+    function sendMessage() {
+        const messageContent = document.getElementById('inputMessage').value;
+        if (messageContent && currentChatRoomId && ws) {
+            const message = {
+                chatRoomId: currentChatRoomId,
+                content: messageContent,
+            };
+
+            ws.send(`/app/send`, {}, JSON.stringify(message)); // 메시지 전송
+            document.getElementById('inputMessage').value = ''; // 입력란 초기화
+        } else {
+            alert('메시지를 입력하거나 채팅방을 선택해주세요.');
+        }
+    }
+
+    // 메시지 표시 함수
+    function displayMessage(message) {
+        const chatBox = document.getElementById('chatBox');
+        const messageElement = document.createElement('div');
+        messageElement.innerText = `[${message.sender}] ${message.content}`;
+        chatBox.appendChild(messageElement);
+        chatBox.scrollTop = chatBox.scrollHeight; // 스크롤 하단으로 이동
+    }
+
+    // 채팅방 생성 함수
+    function createChatRoom() {
+        const roomName = prompt('채팅방 이름을 입력하세요');
+        const roomType = prompt('채팅방 유형을 입력하세요 (PUBLIC/PRIVATE)');
+
+        fetch('http://localhost:8080/graphql', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({
+                query: `mutation {
+                    createChatRoom(roomName: "${roomName}", roomType: "${roomType}") {
+                        id
+                        roomName
+                        roomType
+                    }
+                }`
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                const chatRoom = data.data.createChatRoom;
+                alert(`채팅방 "${chatRoom.roomName}"이 생성되었습니다.`);
+                loadChatRooms(); // 채팅방 목록 갱신
+            })
+            .catch(error => {
+                console.error('채팅방 생성 실패:', error);
+                alert('채팅방 생성 실패: ' + error.message);
+            });
+    }
 </script>
+
+
 </body>
 </html>

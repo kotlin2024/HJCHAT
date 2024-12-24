@@ -6,6 +6,6 @@ data class MessageDto(
     val id: Long,
     val content: String,
     val sender: Long,
-    val timestamp: String,
+    val timestamp: String?,
     val chatRoomId: Long,
 )

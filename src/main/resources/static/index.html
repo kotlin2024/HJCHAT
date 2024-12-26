@@ -47,6 +47,7 @@
     <button onclick="login()">Login</button>
 </div>
 
+
 <!-- 채팅 섹션 -->
 <div id="chatSection" style="display: none;">
     <h2>Chat Room</h2>
@@ -59,6 +60,37 @@
     <div id="chatBox"></div>
     <input type="text" id="inputMessage" placeholder="Type a message..." />
     <button onclick="sendMessage()">Send</button>
+</div>
+
+<!-- 채팅방 생성 섹션 -->
+<div id="createRoomSection" style="display: none;">
+    <h3>Create Chat Room</h3>
+    <input type="text" id="roomName" placeholder="Enter room name" />
+    <div>
+        <label>
+            <input type="radio" name="roomType" value="PUBLIC" checked /> Public
+        </label>
+        <label>
+            <input type="radio" name="roomType" value="PRIVATE" /> Private
+        </label>
+    </div>
+    <button onclick="createChatRoom()">Create</button>
+    <button onclick="hideCreateRoomModal()">Cancel</button>
+</div>
+
+<!-- 친구 추가 섹션 -->
+<div id="friendSection" style="display: none;">
+    <h2>Friend Management</h2>
+    <input type="text" id="friendUsername" placeholder="Enter username to add as a friend" />
+    <button onclick="sendFriendRequest()">Send Friend Request</button>
+    <div id="friendRequests">
+        <h3>Friend Requests</h3>
+        <div id="receivedRequests"></div>
+    </div>
+    <div id="sentRequests">
+        <h3>Sent Friend Requests</h3>
+        <div id="sentRequestList"></div>
+    </div>
 </div>
 
 <!-- 채팅방 생성 섹션 -->
@@ -106,17 +138,36 @@
 
                 accessToken = token;
 
+                // 사용자 정보 로드
+                return fetch('http://localhost:8080/member/get_user', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                    },
+                });
+            })
+            .then(response => response.json())
+            .then(data => {
+                currentUserId = data.userId; // userId 설정
+                localStorage.setItem('userName', data.userName); // 사용자 이름 저장
+                console.log("Logged in user ID:", currentUserId);
+                console.log("Logged in user name:", data.userName);
+
+                // UI 업데이트
                 document.getElementById('loginSection').style.display = 'none';
-                document.getElementById('chatSection').style.display = 'block';
+                document.getElementById('friendSection').style.display = 'block';
+
+
 
                 initializeWebSocket();
-                loadChatRooms();
+                loadFriendRequests();
             })
             .catch(error => {
                 console.error('로그인 실패:', error);
                 alert(error.message);
             });
     }
+
 
     // WebSocket 초기화
     function initializeWebSocket() {
@@ -125,6 +176,18 @@
 
         ws.connect({}, function (frame) {
             console.log("WebSocket 연결 성공:", frame);
+
+            // 친구 요청 알림 구독
+            ws.subscribe(`/topic/friend/${currentUserId}`, function (message) {
+                const notification = JSON.parse(message.body);
+
+                if (notification.type === "REQUEST") {
+                    alert(`친구 요청이 도착했습니다: ${notification.senderName}`);
+                    loadFriendRequests();
+                } else if (notification.type === "ACCEPT") {
+                    alert(`친구 요청이 수락되었습니다: ${notification.senderName}`);
+                }
+            });
 
             if (currentChatRoomId) {
                 ws.subscribe(`/topic/chatroom/${currentChatRoomId}`, function (message) {
@@ -275,6 +338,124 @@
         chatBox.appendChild(messageElement);
         chatBox.scrollTop = chatBox.scrollHeight;
     }
+
+    function sendFriendRequest() {
+        const friendUsername = document.getElementById('friendUsername').value;
+
+        if (!friendUsername) {
+            alert('Please enter a friend\'s username');
+            return;
+        }
+
+        fetch('http://localhost:8080/friends/request', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({
+                friendId: friendUsername
+            })
+        })
+            .then(response => response.json())
+            .then(() => {
+                alert(`Friend request sent to ${friendUsername}`);
+                document.getElementById('friendUsername').value = '';
+            })
+            .catch(error => {
+                console.error('Failed to send friend request:', error);
+                alert('Failed to send friend request: ' + error.message);
+            });
+    }
+
+    // 친구 요청 수락/거절
+    function respondToFriendRequest(requestId, accept) {
+        fetch('http://localhost:8080/friends/accept', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({
+                friendId: requestId
+            })
+        })
+            .then(() => {
+                alert(accept ? "Friend request accepted" : "Friend request rejected");
+                loadFriendRequests();
+            })
+            .catch(error => {
+                console.error('Failed to respond to friend request:', error);
+                alert('Failed to respond to friend request: ' + error.message);
+            });
+    }
+
+    // 받은 친구 요청 로드
+    function loadFriendRequests() {
+        fetch('http://localhost:8080/friends/request', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+            },
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to load friend requests: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const requests = data; // 요청 리스트
+                const requestContainer = document.getElementById('receivedRequests');
+                requestContainer.innerHTML = ''; // 기존 내용을 초기화
+
+                // 요청 목록을 DOM에 추가
+                requests.forEach(request => {
+                    const requestElement = document.createElement('div');
+
+                    // 요청 내용을 표시 (userId를 대신 표시)
+                    requestElement.innerHTML = `
+                    <p>Friend Request from User ID: ${request.senderName}</p>
+                    <button onclick="respondToFriendRequest(${request.friendId}, true)">Accept</button>
+                    <button onclick="respondToFriendRequest(${request.friendId}, false)">Reject</button>
+                `;
+
+                    requestContainer.appendChild(requestElement);
+                });
+            })
+            .catch(error => {
+                console.error('Failed to load friend requests:', error);
+                alert('Failed to load friend requests: ' + error.message);
+            });
+    }
+
+    function loadSentFriendRequests() {
+        fetch('http://localhost:8080/friends/my_request', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+            },
+        })
+            .then(response => response.json())
+            .then(data => {
+                const requestContainer = document.getElementById('sentRequests');
+                requestContainer.innerHTML = '';
+
+                data.forEach(request => {
+                    const requestElement = document.createElement('div');
+                    requestElement.innerHTML = `
+                    <p>${request.senderName} - Status: ${request.status}</p>
+                `;
+                    requestContainer.appendChild(requestElement);
+                });
+            })
+            .catch(error => {
+                console.error('Failed to load sent friend requests:', error);
+            });
+    }
+
+
+
 </script>
 
 </body>

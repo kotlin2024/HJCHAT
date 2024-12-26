@@ -38,4 +38,3 @@ type Mutation {
     createChatRoom(roomName: String!, roomType: String!): ChatRoom!
     addUser(chatRoomId: ID!, userName: String!): ChatRoomMember!
 }
-

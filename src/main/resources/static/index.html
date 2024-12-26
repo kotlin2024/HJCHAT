@@ -361,6 +361,7 @@
             .then(() => {
                 alert(`Friend request sent to ${friendUsername}`);
                 document.getElementById('friendUsername').value = '';
+                loadSentFriendRequests();  // 보낸 요청 목록 갱신
             })
             .catch(error => {
                 console.error('Failed to send friend request:', error);
@@ -368,8 +369,11 @@
             });
     }
 
+
     // 친구 요청 수락/거절
-    function respondToFriendRequest(requestId, accept) {
+    function respondToFriendRequest(senderId, accept) {
+        console.log(`DEBUG: Sender ID (Friend Request Sender): ${senderId}, Accept: ${accept}`);
+
         fetch('http://localhost:8080/friends/accept', {
             method: 'POST',
             headers: {
@@ -377,18 +381,20 @@
                 'Authorization': `Bearer ${accessToken}`
             },
             body: JSON.stringify({
-                friendId: requestId
+                friendId: senderId // 요청을 보낸 사람의 ID를 friendId로 전달
             })
         })
             .then(() => {
                 alert(accept ? "Friend request accepted" : "Friend request rejected");
-                loadFriendRequests();
+                loadFriendRequests(); // 친구 요청 목록 다시 로드
             })
             .catch(error => {
                 console.error('Failed to respond to friend request:', error);
                 alert('Failed to respond to friend request: ' + error.message);
             });
     }
+
+
 
     // 받은 친구 요청 로드
     function loadFriendRequests() {
@@ -414,6 +420,7 @@
                     const requestElement = document.createElement('div');
 
                     // 요청 내용을 표시 (userId를 대신 표시)
+                    requestElement.id = `friendRequest-${request.friendId}`;
                     requestElement.innerHTML = `
                     <p>Friend Request from User ID: ${request.senderName}</p>
                     <button onclick="respondToFriendRequest(${request.friendId}, true)">Accept</button>
@@ -428,6 +435,7 @@
                 alert('Failed to load friend requests: ' + error.message);
             });
     }
+
 
     function loadSentFriendRequests() {
         fetch('http://localhost:8080/friends/my_request', {

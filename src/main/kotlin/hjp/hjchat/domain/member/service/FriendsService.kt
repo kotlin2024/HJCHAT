@@ -58,20 +58,25 @@ class FriendsService(
     }
 
     @Transactional
-    fun acceptFriendRequest(userId: Long, friendId: Long): FriendShipDto {
+    fun acceptFriendRequest(userId: Long, senderId: Long): FriendShipDto {
         // 친구 요청 찾기
-        val friendRequest = friendRequestRepository.findBySenderIdAndReceiverId(friendId, userId)
+        val friendRequest = friendRequestRepository.findBySenderIdAndReceiverId(senderId = senderId, receiverId = userId)
             ?: throw IllegalArgumentException("친구 요청을 찾을 수 없습니다.")
 
-        // 요청 상태 업데이트 및 삭제
-        friendRequestRepository.delete(friendRequest)
+
+        // 요청 상태 업데이트
+        friendRequest.status = RequestStatus.ACCEPTED
+        friendRequestRepository.save(friendRequest)
 
         // 친구 관계 생성 또는 업데이트
-        val friendship = friendshipRepository.findByUserIdAndFriendId(userId, friendId)
+        val friendship = friendshipRepository.findByUserIdAndFriendId(userId, senderId)
             ?: Friendship(user = friendRequest.receiver, friend = friendRequest.sender, status = FriendshipStatus.ACCEPTED)
 
         friendship.status = FriendshipStatus.ACCEPTED
         friendshipRepository.save(friendship)
+
+        // 친구 요청 삭제
+        friendRequestRepository.delete(friendRequest)
 
         return FriendShipDto(
             userId = friendship.user.id,
@@ -81,8 +86,10 @@ class FriendsService(
         )
     }
 
+
     fun getSentFriendRequests(userId: Long): List<FriendShipDto> {
         val requests = friendRequestRepository.findBySenderId(userId)
+            ?: throw IllegalArgumentException("해당 유저를 찾을수 없음 ${userId}.")
 
         return requests.map {
             FriendShipDto(
@@ -98,11 +105,12 @@ class FriendsService(
 
     fun getReceivedFriendRequests(userId: Long): List<FriendShipDto> {
         val requests = friendRequestRepository.findByReceiverId(userId)
+            ?: throw IllegalArgumentException("해당 유저를 찾을수 없음 ${userId}.")
 
 
         return requests.map {
             FriendShipDto(
-                friendId =it.receiver.id,
+                friendId =it.sender.id,
                 userId = userId,
                 status = it.status.toString(),
                 senderName = it.sender.userName

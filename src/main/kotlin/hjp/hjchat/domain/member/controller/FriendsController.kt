@@ -55,7 +55,8 @@ class FriendsController(
         @AuthenticationPrincipal user: UserPrincipal,
         @RequestBody request: FriendRequestDto
     ): ResponseEntity<FriendShipDto> {
-        val friendship = friendsService.acceptFriendRequest(user.memberId, request.friendId)
+        println(" 사용자가 수락할때의 사용자의 userId = ${user.memberId}")
+        val friendship = friendsService.acceptFriendRequest(userId = user.memberId, senderId = request.friendId)
 
         // WebSocket 알림 전송
         messagingTemplate.convertAndSend("/topic/friend/${request.friendId}",

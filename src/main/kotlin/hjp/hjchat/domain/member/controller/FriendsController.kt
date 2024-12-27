@@ -6,6 +6,8 @@ import hjp.hjchat.domain.member.dto.FriendShipDto
 import hjp.hjchat.domain.member.service.FriendsService
 import hjp.hjchat.domain.member.service.MemberService
 import hjp.hjchat.infra.security.jwt.UserPrincipal
+import org.apache.coyote.Response
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -18,6 +20,13 @@ class FriendsController(
     private val messagingTemplate: SimpMessagingTemplate,
     private val memberService: MemberService,
 ) {
+
+    @GetMapping("/get_list")
+    fun getMyFriendsList(
+        @AuthenticationPrincipal user: UserPrincipal
+    ): ResponseEntity<List<FriendShipDto>>{
+        return ResponseEntity.status(HttpStatus.OK).body(friendsService.getMyFriendsList(user))
+    }
 
     @GetMapping("my_request")
     fun getSentFriendRequests(
@@ -55,7 +64,7 @@ class FriendsController(
         @AuthenticationPrincipal user: UserPrincipal,
         @RequestBody request: FriendRequestDto
     ): ResponseEntity<FriendShipDto> {
-        println(" 사용자가 수락할때의 사용자의 userId = ${user.memberId}")
+
         val friendship = friendsService.acceptFriendRequest(userId = user.memberId, senderId = request.friendId)
 
         // WebSocket 알림 전송
@@ -66,6 +75,16 @@ class FriendsController(
         return ResponseEntity.ok(friendship)
     }
 
+    @PostMapping("/reject")
+    fun rejectFriendRequest(
+        @AuthenticationPrincipal user: UserPrincipal,
+        @RequestBody request: FriendRequestDto
+    ): ResponseEntity<Unit>{
 
+        messagingTemplate.convertAndSend("/topic/friend/${request.friendId}",
+            FriendNotificationDto(type = "REJECT", senderName = memberService.getUserInfo(user).userName)
+        )
+        return ResponseEntity.ok(friendsService.rejectFriendRequest(userId = user.memberId, senderId = request.friendId))
+    }
 
 }

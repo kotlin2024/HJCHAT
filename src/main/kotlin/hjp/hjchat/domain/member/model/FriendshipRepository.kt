@@ -8,4 +8,6 @@ interface FriendshipRepository : JpaRepository<Friendship, Long> {
     fun existsByUserAndFriend(user: MemberEntity, friend: MemberEntity): Boolean
 
     fun findByUserIdAndFriendId(userId: Long, friendId: Long): Friendship?
+
+    fun findAllByUserId(userId: Long): List<Friendship>?
 }

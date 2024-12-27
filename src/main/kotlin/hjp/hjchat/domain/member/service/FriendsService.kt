@@ -5,8 +5,10 @@ import hjp.hjchat.domain.member.dto.FriendshipStatus
 import hjp.hjchat.domain.member.entity.FriendRequest
 import hjp.hjchat.domain.member.entity.Friendship
 import hjp.hjchat.domain.member.entity.RequestStatus
+import hjp.hjchat.domain.member.entity.toResponse
 import hjp.hjchat.domain.member.model.FriendRequestRepository
 import hjp.hjchat.domain.member.model.FriendshipRepository
+import hjp.hjchat.infra.security.jwt.UserPrincipal
 import hjp.hjchat.infra.security.ouath.model.OAuthRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,6 +21,14 @@ class FriendsService(
     private val friendRequestRepository: FriendRequestRepository,
 ) {
 
+
+    fun getMyFriendsList(user: UserPrincipal): List<FriendShipDto> {
+
+        val friendList = friendshipRepository.findAllByUserId(user.memberId)
+            ?: throw IllegalArgumentException("해당 ${user.memberId} ID의 데이터가 존재하지 않음")
+        return friendList.map{ it.toResponse() }
+    }
+
     @Transactional
     fun sendFriendRequest(userId: Long, friendId: Long): FriendShipDto {
         // 친구와 사용자 존재 확인
@@ -29,6 +39,9 @@ class FriendsService(
 
         // 이미 친구 요청이 존재하는지 확인
         if (friendshipRepository.existsByUserAndFriend(user, friend)) {
+            throw IllegalArgumentException("이미 친구 요청이 존재하거나 친구 관계입니다.")
+        }
+        if (friendshipRepository.existsByUserAndFriend(friend, user)) {
             throw IllegalArgumentException("이미 친구 요청이 존재하거나 친구 관계입니다.")
         }
 
@@ -63,17 +76,23 @@ class FriendsService(
         val friendRequest = friendRequestRepository.findBySenderIdAndReceiverId(senderId = senderId, receiverId = userId)
             ?: throw IllegalArgumentException("친구 요청을 찾을 수 없습니다.")
 
+        val user = oAuthRepository.findById(userId).getOrNull()
 
-        // 요청 상태 업데이트
-        friendRequest.status = RequestStatus.ACCEPTED
-        friendRequestRepository.save(friendRequest)
+        val sender = oAuthRepository.findById(senderId).getOrNull()
 
         // 친구 관계 생성 또는 업데이트
-        val friendship = friendshipRepository.findByUserIdAndFriendId(userId, senderId)
-            ?: Friendship(user = friendRequest.receiver, friend = friendRequest.sender, status = FriendshipStatus.ACCEPTED)
+        val friendship = friendshipRepository.findByUserIdAndFriendId(userId = senderId, friendId = userId)
+            ?: throw IllegalArgumentException("친구 요청을 찾을 수 없습니다.")
 
         friendship.status = FriendshipStatus.ACCEPTED
         friendshipRepository.save(friendship)
+        friendshipRepository.save(
+            Friendship(
+                user = user!!,
+                friend = sender!!,
+                status = FriendshipStatus.ACCEPTED
+            )
+        )
 
         // 친구 요청 삭제
         friendRequestRepository.delete(friendRequest)
@@ -84,6 +103,19 @@ class FriendsService(
             status = friendship.status.toString(),
             senderName = friendship.friend.userName
         )
+    }
+
+    @Transactional
+    fun rejectFriendRequest(userId: Long, senderId: Long){
+
+        val friendRequest = friendRequestRepository.findBySenderIdAndReceiverId(senderId = senderId, receiverId = userId)
+            ?: throw IllegalArgumentException("친구 요청을 찾을 수 없습니다.")
+
+        val friendship = friendshipRepository.findByUserIdAndFriendId(userId = senderId, friendId = userId)
+            ?: Friendship(user = friendRequest.receiver, friend = friendRequest.sender, status = FriendshipStatus.REJECTED)
+
+        friendRequestRepository.delete(friendRequest)
+        friendshipRepository.delete(friendship)
     }
 
 
@@ -117,4 +149,5 @@ class FriendsService(
             )
         }
     }
+
 }

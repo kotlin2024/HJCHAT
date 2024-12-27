@@ -43,6 +43,7 @@ class SecurityConfig(
                     "/api/oauth/**",
                     "/graphql",
                     "/ws/**",
+                    "/admin/**", // TODO() 개발단계에서만 사용 추후에 반드시 삭제할것!!!!
                 ).permitAll()
                     .requestMatchers(HttpMethod.GET, "/**").permitAll()
                     .anyRequest().authenticated()

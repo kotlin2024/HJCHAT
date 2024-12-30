@@ -10,6 +10,7 @@ import hjp.hjchat.domain.chat.model.ChatRoomRepository
 import hjp.hjchat.domain.chat.model.MessageRepository
 import hjp.hjchat.infra.security.jwt.UserPrincipal
 import hjp.hjchat.infra.security.ouath.model.OAuthRepository
+import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -20,7 +21,8 @@ class ChatService(
     private val messageRepository: MessageRepository,
     private val chatRoomMemberRepository: ChatRoomMemberRepository,
     private val oAuthRepository: OAuthRepository,
-    private val messagingTemplate: SimpMessagingTemplate
+    private val messagingTemplate: SimpMessagingTemplate,
+    private val kafkaTemplate: KafkaTemplate<String, String>
 ) {
 
 

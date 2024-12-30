@@ -22,7 +22,7 @@ class ChatService(
     private val chatRoomMemberRepository: ChatRoomMemberRepository,
     private val oAuthRepository: OAuthRepository,
     private val messagingTemplate: SimpMessagingTemplate,
-    private val kafkaTemplate: KafkaTemplate<String, String>
+    private val kafkaProducerService: KafkaProducerService,
 ) {
 
 
@@ -33,14 +33,20 @@ class ChatService(
         val member = oAuthRepository.findById(user.memberId)
             .orElseThrow { IllegalArgumentException("Member not found") }
 
-        val savedMessage = messageRepository.save(
+        // Kafka 메시지 전송
+        kafkaProducerService.sendMessage("chat-messages", mapOf(
+            "chatRoomId" to message.chatRoomId.toString(),
+            "sender" to member.userName,
+            "content" to message.content
+        ))
+
+        return messageRepository.save(
             Message(
                 content = message.content,
                 userId = member,
                 chatRoom = chatRoom,
             )
         )
-        return savedMessage
     }
 
 

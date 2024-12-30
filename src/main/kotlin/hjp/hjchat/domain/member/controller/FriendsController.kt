@@ -50,12 +50,6 @@ class FriendsController(
         @RequestBody request: FriendRequestDto
     ): ResponseEntity<FriendShipDto> {
         val friendship = friendsService.sendFriendRequest(user.memberId, request.friendId)
-
-        // WebSocket 알림 전송
-        messagingTemplate.convertAndSend("/topic/friend/${request.friendId}",
-            FriendNotificationDto(type = "REQUEST", senderName = memberService.getUserInfo(user).userName)
-        )
-
         return ResponseEntity.ok(friendship)
     }
 

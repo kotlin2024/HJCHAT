@@ -44,7 +44,7 @@ class ChatController(
             ?: throw IllegalArgumentException("UserPrincipal not found in session attributes")
 
         val savedMessage = chatService.processMessage(message, userPrincipal)
-        messagingTemplate.convertAndSend("/topic/chatroom/${message.chatRoomId}", savedMessage.toResponse())
+
     }
 
     @MutationMapping

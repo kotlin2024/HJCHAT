@@ -257,6 +257,12 @@
         if (ws) {
             ws.subscribe(`/topic/chatroom/${roomId}`, function (message) {
                 const receivedMessage = JSON.parse(message.body);
+
+                //추후 아래 3줄은 삭제할것
+                const sender = receivedMessage.sender || "Unknown";
+                const content = receivedMessage.content || "No content";
+                console.log(`DEBUG: Sender: ${sender}, Content: ${content}`);
+
                 displayMessage(receivedMessage);
             });
         }
@@ -342,7 +348,7 @@
     function displayMessage(message) {
         const chatBox = document.getElementById('chatBox');
         const messageElement = document.createElement('div');
-        messageElement.innerHTML = `<strong>${message.senderName}:</strong> ${message.content}`;
+        messageElement.innerHTML = `<strong>${message.sender}:</strong> ${message.content}`;
         chatBox.appendChild(messageElement);
         chatBox.scrollTop = chatBox.scrollHeight;
     }

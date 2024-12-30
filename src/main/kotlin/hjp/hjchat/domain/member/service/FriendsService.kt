@@ -10,6 +10,7 @@ import hjp.hjchat.domain.member.model.FriendRequestRepository
 import hjp.hjchat.domain.member.model.FriendshipRepository
 import hjp.hjchat.infra.security.jwt.UserPrincipal
 import hjp.hjchat.infra.security.ouath.model.OAuthRepository
+import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import kotlin.jvm.optionals.getOrNull
@@ -19,6 +20,7 @@ class FriendsService(
     private val oAuthRepository: OAuthRepository,
     private val friendshipRepository: FriendshipRepository,
     private val friendRequestRepository: FriendRequestRepository,
+    private val kafkaTemplate: KafkaTemplate<String, String>,
 ) {
 
 
@@ -61,6 +63,13 @@ class FriendsService(
                 status = FriendshipStatus.PENDING
             )
         )
+
+        val event = mapOf(
+            "type" to "REQUEST",
+            "senderId" to userId,
+            "receiverId" to friendId
+        )
+        kafkaTemplate.send("friend-events", event.toString())
 
         return FriendShipDto(
             userId = friendship.user.id,

@@ -5,109 +5,79 @@ import graphql.kickstart.tools.GraphQLQueryResolver
 import hjp.hjchat.domain.chat.dto.MessageDto
 import hjp.hjchat.domain.chat.entity.ChatRoom
 import hjp.hjchat.domain.chat.entity.ChatRoomMember
-import hjp.hjchat.domain.chat.entity.Message
 import hjp.hjchat.domain.chat.entity.toResponse
-import hjp.hjchat.domain.chat.model.ChatRoomMemberRepository
 import hjp.hjchat.domain.chat.model.ChatRoomRepository
-import hjp.hjchat.domain.chat.model.MessageRepository
+import hjp.hjchat.domain.chat.service.ChatService
 import hjp.hjchat.infra.security.jwt.UserPrincipal
-import hjp.hjchat.infra.security.ouath.model.OAuthRepository
+import jakarta.transaction.Transactional
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.MutationMapping
 import org.springframework.graphql.data.method.annotation.QueryMapping
+import org.springframework.messaging.handler.annotation.MessageMapping
+import org.springframework.messaging.handler.annotation.Payload
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor
+import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Controller
-import java.time.LocalDateTime
+import org.springframework.web.bind.annotation.CrossOrigin
 
-
+@CrossOrigin(origins = ["http://localhost:63342"])
 @Controller
 class ChatController(
-    private val messageRepository: MessageRepository,
-    private val oAuthRepository: OAuthRepository,
-    private val charRoomRepository: ChatRoomRepository,
+    private val chatService: ChatService,
     private val chatRoomRepository: ChatRoomRepository,
-    private val chatRoomMemberRepository: ChatRoomMemberRepository,
+    private val messagingTemplate: SimpMessagingTemplate,
 ) : GraphQLQueryResolver, GraphQLMutationResolver {
 
     @QueryMapping
-    fun getMessages(): List<MessageDto> {
-        return messageRepository.findAll().map { it.toResponse() }
+    fun getChatRooms(): List<ChatRoom> {
+        return chatRoomRepository.findAll()
     }
 
-    @MutationMapping
+    @MessageMapping("/send")
+    @Transactional
     fun sendMessage(
-        @AuthenticationPrincipal user: UserPrincipal,
-        @Argument content: String,
-        @Argument chatRoomId: Long
-    ): MessageDto {
+        @Payload message: MessageDto,
+        headerAccessor: SimpMessageHeaderAccessor
+    ) {
+        val userPrincipal = headerAccessor.sessionAttributes?.get("userPrincipal") as? UserPrincipal
+            ?: throw IllegalArgumentException("UserPrincipal not found in session attributes")
 
-        val member = oAuthRepository.findById(user.memberId)
-            .orElseThrow { IllegalArgumentException("Member not found") }
-
-        val chatRoom = chatRoomRepository.findById(chatRoomId)
-            .orElseThrow { IllegalArgumentException("Chat room not found") }
-
-        val savedMessage = messageRepository.save(
-            Message(
-                content = content,
-                userId = member,
-                chatRoom = chatRoom
-            )
-        )
-        return savedMessage.toResponse()
+        val savedMessage = chatService.processMessage(message, userPrincipal)
+        messagingTemplate.convertAndSend("/topic/chatroom/${message.chatRoomId}", savedMessage.toResponse())
     }
 
     @MutationMapping
+    @Transactional
     fun createChatRoom(
         @AuthenticationPrincipal user: UserPrincipal,
         @Argument roomName: String,
-        @Argument roomType: String,
+        @Argument roomType: String
     ): ChatRoom {
-
-        val member = oAuthRepository.findById(user.memberId)
-            .orElseThrow { IllegalArgumentException("Member not found") }
-
-        val chatRoom = chatRoomRepository.save(
-            ChatRoom(
-                roomName = roomName,
-                roomType = roomType.toUpperCase(),
-                createdAt = LocalDateTime.now(),
-                updatedAt = null,
-                members = mutableListOf(),
-            )
-        )
-
-        chatRoomMemberRepository.save(
-            ChatRoomMember(
-                chatRoom = chatRoom,
-                member = member,
-            )
-        )
-
-        return chatRoom
+        return chatService.createChatRoom(user.memberId, roomName, roomType)
     }
 
     @MutationMapping
-    fun inviteUserToChatRoom(
-        @AuthenticationPrincipal user: UserPrincipal,
+    fun addUser(
         @Argument chatRoomId: Long,
-        @Argument userId: Long,
+        @Argument userName: String,
+        @AuthenticationPrincipal user: UserPrincipal
     ): ChatRoomMember {
+        return chatService.addUserToChatRoom(chatRoomId, userName, user)
+    }
 
-        val member = oAuthRepository.findById(user.memberId)
-            .orElseThrow { IllegalArgumentException("Member not found") }
+    @MessageMapping("/join")
+    fun joinChatRoom(
+        @Payload roomId: Long,
+        headerAccessor: SimpMessageHeaderAccessor
+    ) {
+        val userPrincipal = headerAccessor.sessionAttributes?.get("userPrincipal") as? UserPrincipal
+            ?: throw IllegalArgumentException("UserPrincipal not found in session attributes")
 
-        val chatRoom = chatRoomRepository.findById(chatRoomId)
-            .orElseThrow { IllegalArgumentException("Chat room not found") }
+        if (!chatService.checkRoomAccess(roomId, userPrincipal.memberId)) {
+            throw IllegalArgumentException("Access denied to the chat room.")
+        }
 
-        val invitedMember = oAuthRepository.findById(userId)
-            .orElseThrow { IllegalArgumentException("Invited member not found") }
-
-        return chatRoomMemberRepository.save(
-            ChatRoomMember(
-                chatRoom = chatRoom,
-                member = invitedMember,
-            )
-        )
+        // Broadcast or other join-related logic can be added here.
     }
 }

@@ -1,0 +1,44 @@
+<!--<!DOCTYPE html>-->
+<!--<html lang="en">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--    <title>Login</title>-->
+<!--</head>-->
+<!--<body>-->
+<!--<h1>Login</h1>-->
+<!--<form id="loginForm">-->
+<!--    <input type="text" id="username" placeholder="Username" required><br>-->
+<!--    <input type="password" id="password" placeholder="Password" required><br>-->
+<!--    <button type="submit">Login</button>-->
+<!--</form>-->
+
+<!--<script>-->
+<!--    document.getElementById('loginForm').addEventListener('submit', function(e) {-->
+<!--        e.preventDefault();-->
+
+<!--        const username = document.getElementById('username').value;-->
+<!--        const password = document.getElementById('password').value;-->
+
+<!--        fetch('http://localhost:8080/api/login', {-->
+<!--            method: 'POST',-->
+<!--            headers: {-->
+<!--                'Content-Type': 'application/json'-->
+<!--            },-->
+<!--            body: JSON.stringify({ username, password })-->
+<!--        })-->
+<!--            .then(response => response.json())-->
+<!--            .then(data => {-->
+<!--                if (data.accessToken) {-->
+<!--                    // 로그인 성공 후 토큰을 쿠키에 저장-->
+<!--                    document.cookie = `accessToken=${data.accessToken}`;-->
+<!--                    window.location.href = '/chat.html';  // 로그인 후 채팅 페이지로 리다이렉트-->
+<!--                } else {-->
+<!--                    alert('Login failed!');-->
+<!--                }-->
+<!--            })-->
+<!--            .catch(error => console.error('Error:', error));-->
+<!--    });-->
+<!--</script>-->
+<!--</body>-->
+<!--</html>-->

@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        #chatBox {
+            width: 400px;
+            height: 300px;
+            border: 1px solid #ccc;
+            margin: 20px 0;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        #inputMessage {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        #chatRooms {
+            margin: 20px 0;
+        }
+
+        #createRoomBtn {
+            margin-top: 10px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+</head>
+<body>
+
+<h1>HJ Chat</h1>
+
+<!-- 로그인 섹션 -->
+<div id="loginSection">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username" required />
+    <input type="password" id="password" placeholder="Password" required />
+    <button onclick="login()">Login</button>
+</div>
+
+
+<!-- 채팅 섹션 -->
+<div id="chatSection" style="display: none;">
+    <h2>Chat Room</h2>
+    <div id="chatRooms">
+        <h3>Available Chat Rooms</h3>
+        <button class="btn btn-primary" onclick="loadChatRooms()"  >채팅방 조회</button>
+        <div id="roomList"></div>
+        <button id="createRoomBtn" onclick="showCreateRoomModal()">Create Chat Room</button>
+    </div>
+
+    <div id="chatBox"></div>
+    <input type="text" id="inputMessage" placeholder="Type a message..." />
+    <button onclick="sendMessage()">Send</button>
+</div>
+
+<!-- 채팅방 생성 섹션 -->
+<div id="createRoomSection" style="display: none;">
+    <h3>Create Chat Room</h3>
+    <input type="text" id="roomName" placeholder="Enter room name" />
+    <div>
+        <label>
+            <input type="radio" name="roomType" value="PUBLIC" checked /> Public
+        </label>
+        <label>
+            <input type="radio" name="roomType" value="PRIVATE" /> Private
+        </label>
+    </div>
+    <button onclick="createChatRoom()">Create</button>
+    <button onclick="hideCreateRoomModal()">Cancel</button>
+</div>
+
+<!-- 친구 추가 섹션 -->
+<div id="friendSection" style="display: none;">
+    <h2>Friend Management</h2>
+    <input type="text" id="friendUsername" placeholder="Enter username to add as a friend" />
+    <button onclick="sendFriendRequest()">Send Friend Request</button>
+    <div id="friendRequests">
+        <h3>Friend Requests</h3>
+        <div id="receivedRequests"></div>
+    </div>
+    <div id="sentRequests">
+        <h3>Sent Friend Requests</h3>
+        <div id="sentRequestList"></div>
+    </div>
+    <div id = "friendsList">
+        <h3 style = "color:darkslateblue"> 친구 리스트 조회 </h3>
+        <div id="getFriendsList">
+        </div>
+    </div>
+</div>
+
+
+<script>
+    let ws = null; // WebSocket 객체 전역 선언
+    let accessToken = ''; // AccessToken 저장
+    let currentChatRoomId = null; // 현재 채팅방 ID
+
+    // 로그인 함수
+    function login() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        fetch('http://localhost:8080/api/oauth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, password }),
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`로그인 실패: 서버 응답 상태 ${response.status}`);
+                }
+
+                const token = response.headers.get('Authorization')?.split(' ')[1];
+                if (!token) {
+                    throw new Error('로그인 실패: Authorization 헤더가 비어있음');
+                }
+
+                accessToken = token;
+
+                // 사용자 정보 로드
+                return fetch('http://localhost:8080/member/get_user', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                    },
+                });
+            })
+            .then(response => response.json())
+            .then(data => {
+                currentUserId = data.userId; // userId 설정
+                localStorage.setItem('userName', data.userName); // 사용자 이름 저장
+                console.log("Logged in user ID:", currentUserId);
+                console.log("Logged in user name:", data.userName);
+
+                // UI 업데이트
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('friendSection').style.display = 'block';
+                document.getElementById('chatSection').style.display = 'block';
+
+
+                initializeWebSocket();
+                loadFriendRequests();
+            })
+            .catch(error => {
+                console.error('로그인 실패:', error);
+                alert(error.message);
+            });
+    }
+
+
+    // WebSocket 초기화
+    function initializeWebSocket() {
+        const socket = new SockJS(`http://localhost:8080/ws?token=${accessToken}`);
+        ws = Stomp.over(socket);
+
+        ws.connect({}, function (frame) {
+            console.log("WebSocket 연결 성공:", frame);
+
+            // 친구 요청 알림 구독
+            ws.subscribe(`/topic/friend/${currentUserId}`, function (message) {
+                const notification = JSON.parse(message.body);
+
+                if (notification.type === "REQUEST") {
+                    alert(`친구 요청이 도착했습니다: ${notification.senderName}`);
+                    loadFriendRequests();
+                } else if (notification.type === "ACCEPT") {
+                    alert(`친구 요청이 수락되었습니다: ${notification.senderName}`);
+                }
+            });
+
+            if (currentChatRoomId) {
+                ws.subscribe(`/topic/chatroom/${currentChatRoomId}`, function (message) {
+                    const receivedMessage = JSON.parse(message.body);
+                    displayMessage(receivedMessage);
+                });
+            }
+        }, function (error) {
+            console.error("WebSocket 연결 실패:", error);
+            alert("WebSocket 연결 실패");
+        });
+    }
+
+    // 채팅방 목록 로드
+    let isChatRoomListVisible = false; // 채팅방 리스트 표시 여부 상태
+
+    // 채팅방 목록 로드 및 토글
+    function loadChatRooms() {
+        const roomList = document.getElementById('roomList');
+        const button = document.querySelector('button[onclick="loadChatRooms()"]');
+
+        if (isChatRoomListVisible) {
+            // 리스트가 표시 중이면 숨기기
+            roomList.innerHTML = '';
+            button.innerText = '채팅방 조회';
+        } else {
+            // 리스트가 숨겨져 있으면 불러오기
+            fetch('http://localhost:8080/graphql', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({
+                    query: `query {
+                        getChatRooms {
+                            id
+                            roomName
+                            roomType
+                        }
+                    }`
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    roomList.innerHTML = ''; // 기존 내용을 초기화
+                    const rooms = data.data.getChatRooms;
+
+                    rooms.forEach(room => {
+                        const roomElement = document.createElement('div');
+                        roomElement.innerHTML = `
+                            <button onclick="joinChatRoom(${room.id}, '${room.roomName}')">${room.roomName} (${room.roomType})</button>
+                        `;
+                        roomList.appendChild(roomElement);
+                    });
+
+                    button.innerText = '채팅방 숨기기';
+                })
+                .catch(error => {
+                    console.error('채팅방 목록 로드 실패:', error);
+                    alert('채팅방 목록 로드 실패: ' + error.message);
+                });
+        }
+
+        isChatRoomListVisible = !isChatRoomListVisible; // 상태 토글
+    }
+
+    // 채팅방 입장
+    function joinChatRoom(roomId, roomName) {
+        currentChatRoomId = roomId;
+
+        alert(`"${roomName}" 채팅방에 입장했습니다.`);
+        document.getElementById('chatBox').innerHTML = '';
+
+        if (ws) {
+            ws.subscribe(`/topic/chatroom/${roomId}`, function (message) {
+                const receivedMessage = JSON.parse(message.body);
+                displayMessage(receivedMessage);
+            });
+        }
+    }
+
+    // 채팅방 생성
+    function createChatRoom() {
+        const roomName = document.getElementById('roomName').value;
+        const roomType = document.querySelector('input[name="roomType"]:checked').value;
+
+        if (!roomName || !roomType) {
+            alert('Please provide a room name and select a room type.');
+            return;
+        }
+
+        fetch('http://localhost:8080/graphql', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({
+                query: `mutation {
+                    createChatRoom(roomName: "${roomName}", roomType: "${roomType}") {
+                        id
+                        roomName
+                        roomType
+                    }
+                }`
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                const chatRoom = data.data.createChatRoom;
+                alert(`Chat room "${chatRoom.roomName}" created as ${chatRoom.roomType.toLowerCase()}!`);
+                hideCreateRoomModal();
+                //loadChatRooms();
+            })
+            .catch(error => {
+                console.error('Chat room creation failed:', error);
+                alert('Chat room creation failed: ' + error.message);
+            });
+    }
+
+    function showCreateRoomModal() {
+        document.getElementById('createRoomSection').style.display = 'block';
+    }
+
+    function hideCreateRoomModal() {
+        document.getElementById('createRoomSection').style.display = 'none';
+    }
+
+    // 메시지 전송
+    function sendMessage() {
+        const messageContent = document.getElementById('inputMessage').value; // 입력된 메시지
+        console.log("Message content:", messageContent);
+        console.log("Current Chat Room ID:", currentChatRoomId);
+        console.log("WebSocket status:", ws ? "Connected" : "Not Connected");
+
+        if (messageContent.trim() && currentChatRoomId && ws) {
+            const message = {
+                chatRoomId: currentChatRoomId,
+                content: messageContent,
+                senderName: localStorage.getItem('userName') || "Unknown"
+            };
+
+            ws.send(`/app/send`, {}, JSON.stringify(message)); // 메시지 전송
+            document.getElementById('inputMessage').value = ''; // 입력 필드 초기화
+        } else {
+            if (!messageContent.trim()) {
+                alert('메시지를 입력해주세요.');
+            } else if (!currentChatRoomId) {
+                alert('채팅방을 선택해주세요.');
+            } else if (!ws) {
+                alert('WebSocket이 연결되지 않았습니다.');
+            }
+        }
+    }
+
+
+
+    // 메시지 표시
+    function displayMessage(message) {
+        const chatBox = document.getElementById('chatBox');
+        const messageElement = document.createElement('div');
+        messageElement.innerHTML = `<strong>${message.senderName}:</strong> ${message.content}`;
+        chatBox.appendChild(messageElement);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function sendFriendRequest() {
+        const friendUsername = document.getElementById('friendUsername').value;
+
+        if (!friendUsername) {
+            alert('Please enter a friend\'s username');
+            return;
+        }
+
+        fetch('http://localhost:8080/friends/request', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({
+                friendId: friendUsername
+            })
+        })
+            .then(response => response.json())
+            .then(() => {
+                alert(`Friend request sent to ${friendUsername}`);
+                document.getElementById('friendUsername').value = '';
+                loadSentFriendRequests();  // 보낸 요청 목록 갱신
+            })
+            .catch(error => {
+                console.error('Failed to send friend request:', error);
+                alert('Failed to send friend request: ' + error.message);
+            });
+    }
+
+
+    // 친구 요청 수락/거절
+    function respondToFriendRequest(senderId, accept) {
+        console.log(`DEBUG: Sender ID (Friend Request Sender): ${senderId}, Accept: ${accept}`);
+
+        if(accept){
+            fetch('http://localhost:8080/friends/accept', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({
+                    friendId: senderId // 요청을 보낸 사람의 ID를 friendId로 전달
+                })
+            })
+                .then(() => {
+                    alert("Friend request accepted");
+                    loadFriendRequests(); // 친구 요청 목록 다시 로드
+                })
+                .catch(error => {
+                    console.error('Failed to respond to friend request:', error);
+                    alert('Failed to respond to friend request: ' + error.message);
+                });
+        }
+        else{
+            fetch('http://localhost:8080/friends/reject', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({
+                    friendId: senderId // 요청을 보낸 사람의 ID를 friendId로 전달
+                })
+            })
+                .then(() => {
+                    alert("Friend request rejected");
+                    loadFriendRequests(); // 친구 요청 목록 다시 로드
+                })
+                .catch(error => {
+                    console.error('Failed to respond to friend request:', error);
+                    alert('Failed to respond to friend request: ' + error.message);
+                });
+
+        }
+
+    }
+
+
+
+    // 받은 친구 요청 로드
+    function loadFriendRequests() {
+        fetch('http://localhost:8080/friends/request', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+            },
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to load friend requests: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const requests = data; // 요청 리스트
+                const requestContainer = document.getElementById('receivedRequests');
+                requestContainer.innerHTML = ''; // 기존 내용을 초기화
+
+                // 요청 목록을 DOM에 추가
+                requests.forEach(request => {
+                    const requestElement = document.createElement('div');
+
+                    // 요청 내용을 표시 (userId를 대신 표시)
+                    requestElement.id = `friendRequest-${request.friendId}`;
+                    requestElement.innerHTML = `
+                    <p>Friend Request from User ID: ${request.senderName}</p>
+                    <button onclick="respondToFriendRequest(${request.friendId}, true)">Accept</button>
+                    <button onclick="respondToFriendRequest(${request.friendId}, false)">Reject</button>
+                `;
+
+                    requestContainer.appendChild(requestElement);
+                });
+            })
+            .catch(error => {
+                console.error('Failed to load friend requests:', error);
+                alert('Failed to load friend requests: ' + error.message);
+            });
+    }
+
+
+    function loadSentFriendRequests() {
+        fetch('http://localhost:8080/friends/my_request', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+            },
+        })
+            .then(response => response.json())
+            .then(data => {
+                const requestContainer = document.getElementById('sentRequests');
+                requestContainer.innerHTML = '';
+
+                data.forEach(request => {
+                    const requestElement = document.createElement('div');
+                    requestElement.innerHTML = `
+                    <p>${request.senderName} - Status: ${request.status}</p>
+                `;
+                    requestContainer.appendChild(requestElement);
+                });
+            })
+            .catch(error => {
+                console.error('Failed to load sent friend requests:', error);
+            });
+    }
+
+    function getMyFriendsList(){
+        fetch('http://localhost:8080/friends/get_list', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+            },
+        })
+            .then(response => response.json())
+            .then(data => {
+                const requestContainer = document.getElementById('friendsList');
+                requestContainer.innerHTML = '';
+
+                data.forEach(request => {
+                    const requestElement = document.createElement('div');
+                    requestElement.innerHTML = `
+                    <p>${request.senderName}</p>
+                `;
+                    requestContainer.appendChild(requestElement);
+                });
+            })
+            .catch(error => {
+                console.error('Failed to load get friends List:', error);
+            });
+    }
+
+
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+</body>
+</html>

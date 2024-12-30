@@ -11,10 +11,10 @@ class ChatRoom(
     val id: Long? = null,
 
     @OneToMany(mappedBy = "chatRoom", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val messages: List<Message> = mutableListOf(),
+    val messages: MutableList<Message> = mutableListOf(),
 
-    @OneToMany(mappedBy = "chatRoom")
-    val members : List<ChatRoomMember>,
+    @OneToMany(mappedBy = "chatRoom", cascade = [CascadeType.ALL], orphanRemoval = true)
+    val members: MutableList<ChatRoomMember> = mutableListOf(),
 
     @Column(name = "room_name")
     var roomName: String,

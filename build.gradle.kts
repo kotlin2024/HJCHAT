@@ -58,6 +58,9 @@ dependencies {
     //Web Socket
     implementation ("org.springframework.boot:spring-boot-starter-websocket")
 
+    //log
+    implementation ("ch.qos.logback:logback-classic:1.4.5")  // 최신 버전 사용
+
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
@@ -78,11 +81,6 @@ allOpen {
     annotation("jakarta.persistence.MappedSuperclass")
     annotation("jakarta.persistence.Embeddable")
 }
-//noArg {
-//    annotation("jakarta.persistence.Entity")
-//    annotation("jakarta.persistence.MappedSuperclass")
-//    annotation("jakarta.persistence.Embeddable")
-//}
 
 tasks.withType<Test> {
     useJUnitPlatform()

@@ -25,6 +25,20 @@ class ChatService(
     private val kafkaProducerService: KafkaProducerService,
 ) {
 
+    fun getChatRoom(): List<ChatRoom>{
+        return chatRoomRepository.findAll()
+    }
+
+    fun getChatRoomMessages(chatRoomId: Long): List<MessageDto> {
+        val chatRoom = chatRoomRepository.findById(chatRoomId)
+            .orElseThrow { IllegalArgumentException("Chat room not found") }
+
+        val allMessages = messageRepository.findAllByChatRoom(chatRoom)
+            ?: throw IllegalArgumentException("해당 채팅방에 어떤 메세지도 없음")
+
+        return allMessages.map { it.toResponse() }
+    }
+
 
     fun processMessage(message: MessageDto, user: UserPrincipal): Message {
         val chatRoom = chatRoomRepository.findById(message.chatRoomId)
@@ -34,11 +48,13 @@ class ChatService(
             .orElseThrow { IllegalArgumentException("Member not found") }
 
         // Kafka 메시지 전송
-        kafkaProducerService.sendMessage("chat-messages", mapOf(
-            "chatRoomId" to message.chatRoomId.toString(),
-            "sender" to member.userName,
-            "content" to message.content
-        ))
+        kafkaProducerService.sendMessage(
+            "chat-messages", mapOf(
+                "chatRoomId" to message.chatRoomId.toString(),
+                "senderName" to member.userName,
+                "content" to message.content
+            )
+        )
 
         return messageRepository.save(
             Message(
@@ -96,8 +112,8 @@ class ChatService(
         val inviteMessage = Message(
             content = "${invitedMember.userName} has been invited to the chat room.",
             userId = invitedMember,
-            chatRoom = chatRoom
-        )
+            chatRoom = chatRoom,
+        ) // TODO() 해당 부분 추후에 수정할것
         messageRepository.save(inviteMessage)
         messagingTemplate.convertAndSend("/topic/chatroom/$chatRoomId", inviteMessage.toResponse())
 

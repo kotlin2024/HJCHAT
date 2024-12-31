@@ -32,6 +32,7 @@ fun Friendship.toResponse(): FriendShipDto {
     return FriendShipDto(
         userId = this.user.id,
         friendId = this.friend.id,
+        friendCode = this.friend.userCode!!,
         status = this.status.name,
         senderName = friend.userName
     )

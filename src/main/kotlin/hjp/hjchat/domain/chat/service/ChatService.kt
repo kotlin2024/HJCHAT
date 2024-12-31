@@ -10,7 +10,6 @@ import hjp.hjchat.domain.chat.model.ChatRoomRepository
 import hjp.hjchat.domain.chat.model.MessageRepository
 import hjp.hjchat.infra.security.jwt.UserPrincipal
 import hjp.hjchat.infra.security.ouath.model.OAuthRepository
-import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -91,12 +90,12 @@ class ChatService(
         return chatRoom
     }
 
-    fun addUserToChatRoom(chatRoomId: Long, userName: String, inviter: UserPrincipal): ChatRoomMember {
+    fun addUserToChatRoom(chatRoomId: Long, userCode: String, inviter: UserPrincipal): ChatRoomMember {
         val chatRoom = chatRoomRepository.findById(chatRoomId)
             .orElseThrow { IllegalArgumentException("Chat room not found") }
 
-        val invitedMember = oAuthRepository.findByUserName(userName)
-            ?: throw IllegalArgumentException("User not found")
+        val invitedMember = oAuthRepository.findByUserCode(userCode)
+            ?: throw IllegalArgumentException("$userCode does not found")
 
         if (chatRoomMemberRepository.existsByChatRoomIdAndMember(chatRoomId, invitedMember)) {
             throw IllegalArgumentException("User is already in the chat room")

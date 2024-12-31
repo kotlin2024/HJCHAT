@@ -61,6 +61,9 @@ dependencies {
     //log
     implementation ("ch.qos.logback:logback-classic:1.4.5")  // 최신 버전 사용
 
+    //Kafka
+    implementation("org.springframework.kafka:spring-kafka")
+
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")

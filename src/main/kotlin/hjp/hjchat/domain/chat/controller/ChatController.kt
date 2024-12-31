@@ -13,6 +13,7 @@ import jakarta.transaction.Transactional
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.MutationMapping
 import org.springframework.graphql.data.method.annotation.QueryMapping
+import org.springframework.http.ResponseEntity
 import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor
@@ -20,6 +21,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.CrossOrigin
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 
 @CrossOrigin(origins = ["http://localhost:63342"])
 @Controller
@@ -31,8 +34,15 @@ class ChatController(
 
     @QueryMapping
     fun getChatRooms(): List<ChatRoom> {
-        return chatRoomRepository.findAll()
+        return chatService.getChatRoom()
     }
+
+    @GetMapping("/chatroom/{chatRoomId}/messages")
+    fun getChatRoomMessages(@PathVariable chatRoomId: Long): ResponseEntity<List<MessageDto>> {
+        val messages = chatService.getChatRoomMessages(chatRoomId)
+        return ResponseEntity.ok(messages)
+    }
+
 
     @MessageMapping("/send")
     @Transactional
@@ -44,7 +54,7 @@ class ChatController(
             ?: throw IllegalArgumentException("UserPrincipal not found in session attributes")
 
         val savedMessage = chatService.processMessage(message, userPrincipal)
-        messagingTemplate.convertAndSend("/topic/chatroom/${message.chatRoomId}", savedMessage.toResponse())
+
     }
 
     @MutationMapping
@@ -52,9 +62,10 @@ class ChatController(
     fun createChatRoom(
         @AuthenticationPrincipal user: UserPrincipal,
         @Argument roomName: String,
-        @Argument roomType: String
+        @Argument roomType: String,
+        @Argument roomPassword: String?,
     ): ChatRoom {
-        return chatService.createChatRoom(user.memberId, roomName, roomType)
+        return chatService.createChatRoom(user.memberId, roomName, roomType, roomPassword)
     }
 
     @MutationMapping
@@ -78,6 +89,5 @@ class ChatController(
             throw IllegalArgumentException("Access denied to the chat room.")
         }
 
-        // Broadcast or other join-related logic can be added here.
     }
 }

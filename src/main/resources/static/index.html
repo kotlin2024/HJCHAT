@@ -247,6 +247,25 @@
         isChatRoomListVisible = !isChatRoomListVisible; // 상태 토글
     }
 
+    function loadChatRoomMessages(chatRoomId) {
+        fetch(`http://localhost:8080/chatroom/${chatRoomId}/messages`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        })
+            .then(response => response.json())
+            .then(messages => {
+                const chatBox = document.getElementById('chatBox');
+                chatBox.innerHTML = ''; // 기존 메시지 초기화
+                messages.forEach(message => displayMessage(message)); // 과거 메시지 렌더링
+            })
+            .catch(error => {
+                console.error('Failed to load chat room messages:', error);
+            });
+    }
+
+
     // 채팅방 입장
     function joinChatRoom(roomId, roomName) {
         currentChatRoomId = roomId;
@@ -254,9 +273,16 @@
         alert(`"${roomName}" 채팅방에 입장했습니다.`);
         document.getElementById('chatBox').innerHTML = '';
 
+        loadChatRoomMessages(roomId);
         if (ws) {
             ws.subscribe(`/topic/chatroom/${roomId}`, function (message) {
                 const receivedMessage = JSON.parse(message.body);
+
+                //추후 아래 3줄은 삭제할것
+                const sender = receivedMessage.sender || "Unknown";
+                const content = receivedMessage.content || "No content";
+                console.log(`DEBUG: Sender: ${sender}, Content: ${content}`);
+
                 displayMessage(receivedMessage);
             });
         }

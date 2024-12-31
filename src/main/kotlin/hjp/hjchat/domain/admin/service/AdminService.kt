@@ -1,5 +1,6 @@
 package hjp.hjchat.domain.admin.service
 
+import hjp.hjchat.domain.chat.model.ChatRoomRepository
 import hjp.hjchat.domain.member.dto.MemberRole
 import hjp.hjchat.domain.member.entity.MemberEntity
 import hjp.hjchat.domain.member.entity.NotVerifyMemberEntity
@@ -20,12 +21,15 @@ class AdminService(
     private val friendshipRepository: FriendshipRepository,
     private val oAuthRepository: OAuthRepository,
     private val passwordEncoder: PasswordEncoder,
+    private val chatRoomRepository: ChatRoomRepository,
 ) {
 
+    @Transactional
     fun deleteAllFriendRequestEntity(){
         friendRequestRepository.deleteAll()
     }
 
+    @Transactional
     fun deleteAllFriendshipEntity(){
         friendshipRepository.deleteAll()
     }
@@ -54,4 +58,15 @@ class AdminService(
         )
         return "admin에서 생성된 계정입니다."
     }
+
+    @Transactional
+    fun deleteAllChatRooms(){
+        chatRoomRepository.deleteAll()
+    }
+
+    @Transactional
+    fun deleteChatRooms(roomName: String){
+        chatRoomRepository.deleteByRoomName(roomName)
+    }
+
 }

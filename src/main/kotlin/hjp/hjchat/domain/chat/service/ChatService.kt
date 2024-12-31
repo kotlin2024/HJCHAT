@@ -66,7 +66,7 @@ class ChatService(
     }
 
 
-    fun createChatRoom(memberId: Long, roomName: String, roomType: String): ChatRoom {
+    fun createChatRoom(memberId: Long, roomName: String, roomType: String, roomPassword: String?): ChatRoom {
         val member = oAuthRepository.findById(memberId)
             .orElseThrow { IllegalArgumentException("Member not found") }
 
@@ -74,6 +74,7 @@ class ChatService(
             ChatRoom(
                 roomName = roomName,
                 roomType = roomType.uppercase(),
+                roomPassword = roomPassword,
                 createdAt = LocalDateTime.now(),
                 members = mutableListOf()
             )

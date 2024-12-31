@@ -17,6 +17,7 @@ type ChatRoom {
     id: ID!
     roomName: String!
     roomType: String!
+    roomPassword: String
     createdAt: String!
     updatedAt: String
     members: [ChatRoomMember!]!
@@ -35,6 +36,6 @@ type Query {
 }
 
 type Mutation {
-    createChatRoom(roomName: String!, roomType: String!): ChatRoom!
+    createChatRoom(roomName: String!, roomType: String!, roomPassword: String): ChatRoom!
     addUser(chatRoomId: ID!, userName: String!): ChatRoomMember!
 }

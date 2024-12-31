@@ -62,9 +62,10 @@ class ChatController(
     fun createChatRoom(
         @AuthenticationPrincipal user: UserPrincipal,
         @Argument roomName: String,
-        @Argument roomType: String
+        @Argument roomType: String,
+        @Argument roomPassword: String?,
     ): ChatRoom {
-        return chatService.createChatRoom(user.memberId, roomName, roomType)
+        return chatService.createChatRoom(user.memberId, roomName, roomType, roomPassword)
     }
 
     @MutationMapping
@@ -88,6 +89,5 @@ class ChatController(
             throw IllegalArgumentException("Access denied to the chat room.")
         }
 
-        // Broadcast or other join-related logic can be added here.
     }
 }

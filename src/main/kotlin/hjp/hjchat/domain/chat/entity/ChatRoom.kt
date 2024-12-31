@@ -22,6 +22,9 @@ class ChatRoom(
     @Column(name = "room_type")
     var roomType: String,
 
+    @Column(name="room_password")
+    var roomPassword: String? = null,
+
     @Column(name = "생성_날짜", updatable = false)
     val createdAt: LocalDateTime,
 

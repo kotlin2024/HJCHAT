@@ -8,7 +8,7 @@ import java.time.LocalDate
 @Table(name = "members")
 class MemberEntity(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = 0,
+    val id: Long =0,
 
     @OneToMany(mappedBy = "member")
     val chatRoomMembers: List<ChatRoomMember>,
@@ -21,6 +21,9 @@ class MemberEntity(
 
     @Column(name="email", unique = true, nullable = false)
     val email: String,
+
+    @Column(name="user_code")
+    var userCode: String? = null,
 
     @Column(name="탈퇴_유무")
     val isDeleted: Boolean = false,
@@ -37,3 +40,9 @@ class MemberEntity(
     @Column(name="유저_role")
     val memberRole: String,
 )
+{
+    @PostPersist
+    fun setUserCode() {
+        this.userCode = "$userName#$id"
+    }
+}

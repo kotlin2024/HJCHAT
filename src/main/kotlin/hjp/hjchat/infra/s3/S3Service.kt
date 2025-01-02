@@ -7,6 +7,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectResponse
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
+import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest
 import java.nio.file.Path
 import java.time.Duration
 
@@ -16,7 +17,23 @@ class S3Service(
     private val s3Presigner: S3Presigner
 ) {
 
-    fun generatePresignedUrl(bucketName: String, key: String): String {
+    fun generateUploadPresignedUrl(bucketName: String, key: String): String {
+        val putObjectRequest = PutObjectRequest.builder()
+            .bucket(bucketName)
+            .key(key)
+            .build()
+
+        val presignRequest = PutObjectPresignRequest.builder()
+            .putObjectRequest(putObjectRequest)
+            .signatureDuration(Duration.ofMinutes(15)) // Presigned URL 유효 시간
+            .build()
+
+        val presignedUrl = s3Presigner.presignPutObject(presignRequest)
+        return presignedUrl.url().toString()
+    }
+
+    // 파일 다운로드용 Presigned URL 생성
+    fun generateDownloadPresignedUrl(bucketName: String, key: String): String {
         val getObjectRequest = GetObjectRequest.builder()
             .bucket(bucketName)
             .key(key)
@@ -24,29 +41,10 @@ class S3Service(
 
         val presignRequest = GetObjectPresignRequest.builder()
             .getObjectRequest(getObjectRequest)
-            .signatureDuration(Duration.ofMinutes(15)) // 15분 동안 유효
+            .signatureDuration(Duration.ofMinutes(15)) // Presigned URL 유효 시간
             .build()
 
         val presignedUrl = s3Presigner.presignGetObject(presignRequest)
         return presignedUrl.url().toString()
-    }
-
-    fun uploadFile(bucketName: String, key: String, filePath: Path): String {
-        val putObjectRequest = PutObjectRequest.builder()
-            .bucket(bucketName)
-            .key(key)
-            .build()
-
-        val response: PutObjectResponse = s3Client.putObject(putObjectRequest, filePath)
-        return "https://${bucketName}.s3.amazonaws.com/${key}"
-    }
-
-    fun downloadFile(bucketName: String, key: String, destination: Path) {
-        val getObjectRequest = GetObjectRequest.builder()
-            .bucket(bucketName)
-            .key(key)
-            .build()
-
-        s3Client.getObject(getObjectRequest, destination)
     }
 }

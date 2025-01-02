@@ -9,6 +9,7 @@ interface OAuthRepository: JpaRepository<MemberEntity,Long>{
     fun findByUserName(username: String): MemberEntity?
     fun existsByEmail(email: String): Boolean
     fun existsByUserName(username: String): Boolean
+    fun findByUserCode(userCode: String): MemberEntity?
 }
 
 interface EmailVerifyRepository: JpaRepository<NotVerifyMemberEntity,Long>{

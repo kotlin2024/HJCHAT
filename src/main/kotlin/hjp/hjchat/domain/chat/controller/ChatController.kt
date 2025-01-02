@@ -5,8 +5,6 @@ import graphql.kickstart.tools.GraphQLQueryResolver
 import hjp.hjchat.domain.chat.dto.MessageDto
 import hjp.hjchat.domain.chat.entity.ChatRoom
 import hjp.hjchat.domain.chat.entity.ChatRoomMember
-import hjp.hjchat.domain.chat.entity.toResponse
-import hjp.hjchat.domain.chat.model.ChatRoomRepository
 import hjp.hjchat.domain.chat.service.ChatService
 import hjp.hjchat.infra.security.jwt.UserPrincipal
 import jakarta.transaction.Transactional
@@ -17,7 +15,6 @@ import org.springframework.http.ResponseEntity
 import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor
-import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.CrossOrigin
@@ -28,8 +25,6 @@ import org.springframework.web.bind.annotation.PathVariable
 @Controller
 class ChatController(
     private val chatService: ChatService,
-    private val chatRoomRepository: ChatRoomRepository,
-    private val messagingTemplate: SimpMessagingTemplate,
 ) : GraphQLQueryResolver, GraphQLMutationResolver {
 
     @QueryMapping
@@ -53,7 +48,7 @@ class ChatController(
         val userPrincipal = headerAccessor.sessionAttributes?.get("userPrincipal") as? UserPrincipal
             ?: throw IllegalArgumentException("UserPrincipal not found in session attributes")
 
-        val savedMessage = chatService.processMessage(message, userPrincipal)
+        chatService.processMessage(message, userPrincipal)
 
     }
 
@@ -71,10 +66,10 @@ class ChatController(
     @MutationMapping
     fun addUser(
         @Argument chatRoomId: Long,
-        @Argument userName: String,
+        @Argument userCode: String,
         @AuthenticationPrincipal user: UserPrincipal
     ): ChatRoomMember {
-        return chatService.addUserToChatRoom(chatRoomId, userName, user)
+        return chatService.addUserToChatRoom(chatRoomId, userCode, user)
     }
 
     @MessageMapping("/join")

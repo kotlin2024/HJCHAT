@@ -17,6 +17,30 @@
             padding: 10px;
             overflow-y: auto;
         }
+        #chatBox div {
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 10px;
+            background-color: #f5f5f5;
+            display: flex;
+            align-items: center;
+        }
+
+        #chatBox img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        #chatBox strong {
+            color: #333;
+            margin-right: 5px;
+        }
+
+        #chatBox div:nth-child(even) {
+            background-color: #e0e0e0;
+        }
 
         #inputMessage {
             width: 100%;
@@ -161,6 +185,7 @@
             .then(data => {
                 currentUserId = data.userId; // userId 설정
                 localStorage.setItem('userName', data.userName); // 사용자 이름 저장
+                localStorage.setItem('profileImageUrl', data.profileImageUrl); //프로필 url저장
                 console.log("Logged in user ID:", currentUserId);
                 console.log("Logged in user name:", data.userName);
 
@@ -360,6 +385,7 @@
     // 메시지 전송
     function sendMessage() {
         const messageContent = document.getElementById('inputMessage').value; // 입력된 메시지
+        const profileImageUrl = localStorage.getItem('profileImageUrl');
         console.log("Message content:", messageContent);
         console.log("Current Chat Room ID:", currentChatRoomId);
         console.log("WebSocket status:", ws ? "Connected" : "Not Connected");
@@ -368,7 +394,8 @@
             const message = {
                 chatRoomId: currentChatRoomId,
                 content: messageContent,
-                senderName: localStorage.getItem('userName') || "Unknown"
+                senderName: localStorage.getItem('userName') || "Unknown",
+                profileImageUrl: profileImageUrl
             };
 
             ws.send(`/app/send`, {}, JSON.stringify(message)); // 메시지 전송
@@ -386,14 +413,53 @@
 
 
 
-    // 메시지 표시
+    // 메시지 표시 이전버전
+    // function displayMessage(message) {
+    //     const chatBox = document.getElementById('chatBox');
+    //     const messageElement = document.createElement('div');
+    //     messageElement.innerHTML = `<strong>${message.senderName}:</strong> ${message.content}`;
+    //     chatBox.appendChild(messageElement);
+    //     chatBox.scrollTop = chatBox.scrollHeight;
+    // }
     function displayMessage(message) {
         const chatBox = document.getElementById('chatBox');
+
+        // 프로필 이미지와 메시지 생성
         const messageElement = document.createElement('div');
-        messageElement.innerHTML = `<strong>${message.senderName}:</strong> ${message.content}`;
+        messageElement.style.display = 'flex'; // 이미지와 텍스트를 수평으로 정렬
+        messageElement.style.alignItems = 'center'; // 정렬
+
+        // 프로필 이미지
+        const profileImage = document.createElement('img');
+        profileImage.alt = `${message.senderName}'s profile`;
+        profileImage.style.width = '40px'; // 이미지 크기 설정
+        profileImage.style.height = '40px';
+        profileImage.style.borderRadius = '50%'; // 원형으로 표시
+        profileImage.style.marginRight = '10px';
+
+        console.log(message.profileImageUrl)
+        // Presigned URL 사용
+        if (message.profileImageUrl) {
+            profileImage.src = message.profileImageUrl; // Presigned URL 설정
+        } else {
+            profileImage.src = 'default-profile.jpg'; // 기본 이미지
+        }
+        // 메시지 텍스트
+        const messageText = document.createElement('div');
+        messageText.innerHTML = `<strong>${message.senderName}:</strong> ${message.content}`;
+
+        // 이미지와 메시지를 하나의 요소로 추가
+        messageElement.appendChild(profileImage);
+        messageElement.appendChild(messageText);
+
+        // 채팅 박스에 메시지 추가
         chatBox.appendChild(messageElement);
-        chatBox.scrollTop = chatBox.scrollHeight;
+        chatBox.scrollTop = chatBox.scrollHeight; // 스크롤 자동 이동
     }
+
+
+
+
 
     function sendFriendRequest() {
         const friendUsername = document.getElementById('friendUsername').value;
@@ -579,6 +645,12 @@
             return;
         }
 
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (file.size > maxSize) {
+            alert('5MB 이하의 이미지만 업로드가 가능합니다.');
+            return;
+        }
+
         try {
             // Step 1: Presigned URL 요청
             const response = await fetch(`http://localhost:8080/api/s3/upload/url?fileName=${file.name}`, {
@@ -634,6 +706,7 @@
             // 이미지 표시
             const profileContainer = document.getElementById('profileContainer');
             profileContainer.innerHTML = `<img src="${presignedUrl}" alt="Profile Image" style="max-width: 300px; max-height: 300px;">`;
+            console.log(`이미지 url =  ${presignedUrl}` )
         } catch (error) {
             console.error(error);
             alert('Failed to load profile image: ' + error.message);

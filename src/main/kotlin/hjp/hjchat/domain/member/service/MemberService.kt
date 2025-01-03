@@ -23,7 +23,9 @@ class MemberService(
         return UserInfo(
             userId = user.memberId,
             userName = member.userName,
-            memberRole = member.memberRole
+            memberRole = member.memberRole,
+            profileImageUrl = member.profileImageUrl
+
         )
     }
 }

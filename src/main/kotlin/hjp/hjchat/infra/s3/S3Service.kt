@@ -4,11 +4,9 @@ import org.springframework.stereotype.Service
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
-import software.amazon.awssdk.services.s3.model.PutObjectResponse
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest
-import java.nio.file.Path
 import java.time.Duration
 
 @Service
@@ -21,11 +19,12 @@ class S3Service(
         val putObjectRequest = PutObjectRequest.builder()
             .bucket(bucketName)
             .key(key)
+            .contentType("image/*")
             .build()
 
         val presignRequest = PutObjectPresignRequest.builder()
             .putObjectRequest(putObjectRequest)
-            .signatureDuration(Duration.ofMinutes(15)) // Presigned URL 유효 시간
+            .signatureDuration(Duration.ofMinutes(15))
             .build()
 
         val presignedUrl = s3Presigner.presignPutObject(presignRequest)
@@ -41,7 +40,7 @@ class S3Service(
 
         val presignRequest = GetObjectPresignRequest.builder()
             .getObjectRequest(getObjectRequest)
-            .signatureDuration(Duration.ofMinutes(15)) // Presigned URL 유효 시간
+            .signatureDuration(Duration.ofMinutes(15))
             .build()
 
         val presignedUrl = s3Presigner.presignGetObject(presignRequest)

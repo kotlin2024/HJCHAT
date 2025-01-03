@@ -8,6 +8,7 @@ import hjp.hjchat.domain.chat.entity.toResponse
 import hjp.hjchat.domain.chat.model.ChatRoomMemberRepository
 import hjp.hjchat.domain.chat.model.ChatRoomRepository
 import hjp.hjchat.domain.chat.model.MessageRepository
+import hjp.hjchat.infra.s3.S3Service
 import hjp.hjchat.infra.security.jwt.UserPrincipal
 import hjp.hjchat.infra.security.ouath.model.OAuthRepository
 import org.springframework.messaging.simp.SimpMessagingTemplate
@@ -22,6 +23,7 @@ class ChatService(
     private val oAuthRepository: OAuthRepository,
     private val messagingTemplate: SimpMessagingTemplate,
     private val kafkaProducerService: KafkaProducerService,
+    private val s3Service: S3Service,
 ) {
 
     fun getChatRoom(): List<ChatRoom>{
@@ -46,12 +48,17 @@ class ChatService(
         val member = oAuthRepository.findById(user.memberId)
             .orElseThrow { IllegalArgumentException("Member not found") }
 
-        // Kafka 메시지 전송
+        var presignedUrl: String? =null
+        if(message.profileImageUrl != null ){
+            presignedUrl = s3Service.generateUploadPresignedUrl(bucketName = "hjchat-s3-bucket1",key = message.profileImageUrl)
+        }
+       // Kafka 메시지 전송
         kafkaProducerService.sendMessage(
             "chat-messages", mapOf(
                 "chatRoomId" to message.chatRoomId.toString(),
                 "senderName" to member.userName,
-                "content" to message.content
+                "content" to message.content,
+                "profileImageUrl" to presignedUrl
             )
         )
 

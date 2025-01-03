@@ -39,6 +39,9 @@ class MemberEntity(
 
     @Column(name="유저_role")
     val memberRole: String,
+
+    @Column(name="유저_프로필사진")
+    var profileImageUrl: String? = null,
 )
 {
     @PostPersist

@@ -11,6 +11,7 @@ class MemberService(
     private val oAuthRepository: OAuthRepository,
 ) {
 
+
     fun getUserInfo(user: UserPrincipal): UserInfo {
 
         val member = oAuthRepository.findById(user.memberId)
@@ -22,7 +23,9 @@ class MemberService(
         return UserInfo(
             userId = user.memberId,
             userName = member.userName,
-            memberRole = member.memberRole
+            memberRole = member.memberRole,
+            profileImageUrl = member.profileImageUrl
+
         )
     }
 }

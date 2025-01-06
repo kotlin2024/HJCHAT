@@ -1,5 +1,6 @@
 package hjp.hjchat.domain.chat.service
 
+import hjp.hjchat.domain.chat.dto.HasAccessDto
 import hjp.hjchat.domain.chat.dto.MessageDto
 import hjp.hjchat.domain.chat.entity.ChatRoom
 import hjp.hjchat.domain.chat.entity.ChatRoomMember
@@ -8,6 +9,7 @@ import hjp.hjchat.domain.chat.entity.toResponse
 import hjp.hjchat.domain.chat.model.ChatRoomMemberRepository
 import hjp.hjchat.domain.chat.model.ChatRoomRepository
 import hjp.hjchat.domain.chat.model.MessageRepository
+import hjp.hjchat.infra.s3.S3Service
 import hjp.hjchat.infra.security.jwt.UserPrincipal
 import hjp.hjchat.infra.security.ouath.model.OAuthRepository
 import org.springframework.messaging.simp.SimpMessagingTemplate
@@ -22,6 +24,7 @@ class ChatService(
     private val oAuthRepository: OAuthRepository,
     private val messagingTemplate: SimpMessagingTemplate,
     private val kafkaProducerService: KafkaProducerService,
+    private val s3Service: S3Service,
 ) {
 
     fun getChatRoom(): List<ChatRoom>{
@@ -46,12 +49,15 @@ class ChatService(
         val member = oAuthRepository.findById(user.memberId)
             .orElseThrow { IllegalArgumentException("Member not found") }
 
-        // Kafka 메시지 전송
+        val profileImageUrl = s3Service.getProfileImageUrl(userId = user.memberId)
+
+       // Kafka 메시지 전송
         kafkaProducerService.sendMessage(
             "chat-messages", mapOf(
                 "chatRoomId" to message.chatRoomId.toString(),
                 "senderName" to member.userName,
-                "content" to message.content
+                "content" to message.content,
+                "profileImageUrl" to profileImageUrl
             )
         )
 
@@ -65,7 +71,7 @@ class ChatService(
     }
 
 
-    fun createChatRoom(memberId: Long, roomName: String, roomType: String, roomPassword: String?): ChatRoom {
+    fun createChatRoom(memberId: Long, roomName: String, roomType: String): ChatRoom {
         val member = oAuthRepository.findById(memberId)
             .orElseThrow { IllegalArgumentException("Member not found") }
 
@@ -73,7 +79,6 @@ class ChatService(
             ChatRoom(
                 roomName = roomName,
                 roomType = roomType.uppercase(),
-                roomPassword = roomPassword,
                 createdAt = LocalDateTime.now(),
                 members = mutableListOf()
             )
@@ -120,14 +125,14 @@ class ChatService(
         return chatRoomMember
     }
 
-    fun checkRoomAccess(chatRoomId: Long, userId: Long): Boolean {
+    fun checkRoomAccess(chatRoomId: Long, userId: Long): HasAccessDto {
         val chatRoom = chatRoomRepository.findById(chatRoomId)
             .orElseThrow { IllegalArgumentException("Chat room not found") }
 
-        return when (chatRoom.roomType.uppercase()) {
-            "PUBLIC" -> true
-            "PRIVATE" -> chatRoomMemberRepository.existsByChatRoomIdAndMemberId(chatRoomId, userId)
-            else -> throw IllegalArgumentException("Invalid room type")
-        }
+        return if(chatRoom.roomType.uppercase() == "PUBLIC" || chatRoomMemberRepository.existsByChatRoomIdAndMemberId(chatRoomId, userId))
+            HasAccessDto(hasAccess = true)
+        else
+            HasAccessDto(hasAccess = false)
+
     }
 }

@@ -8,4 +8,5 @@ data class MessageDto(
     val senderName: String,
     val timestamp: String?,
     val chatRoomId: Long,
+    val profileImageUrl: String?,
 )

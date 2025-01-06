@@ -64,6 +64,12 @@ dependencies {
     //Kafka
     implementation("org.springframework.kafka:spring-kafka")
 
+    //AWS SDK
+    implementation("software.amazon.awssdk:s3:2.20.92")
+
+    // AWS CLOUD 의존성
+    implementation("io.awspring.cloud:spring-cloud-starter-aws:2.4.2")
+
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")

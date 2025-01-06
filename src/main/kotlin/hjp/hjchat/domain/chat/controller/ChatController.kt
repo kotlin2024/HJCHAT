@@ -2,6 +2,7 @@ package hjp.hjchat.domain.chat.controller
 
 import graphql.kickstart.tools.GraphQLMutationResolver
 import graphql.kickstart.tools.GraphQLQueryResolver
+import hjp.hjchat.domain.chat.dto.HasAccessDto
 import hjp.hjchat.domain.chat.dto.MessageDto
 import hjp.hjchat.domain.chat.entity.ChatRoom
 import hjp.hjchat.domain.chat.entity.ChatRoomMember
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
 
 @CrossOrigin(origins = ["http://localhost:63342"])
 @Controller
@@ -58,9 +60,8 @@ class ChatController(
         @AuthenticationPrincipal user: UserPrincipal,
         @Argument roomName: String,
         @Argument roomType: String,
-        @Argument roomPassword: String?,
     ): ChatRoom {
-        return chatService.createChatRoom(user.memberId, roomName, roomType, roomPassword)
+        return chatService.createChatRoom(user.memberId, roomName, roomType)
     }
 
     @MutationMapping
@@ -72,17 +73,12 @@ class ChatController(
         return chatService.addUserToChatRoom(chatRoomId, userCode, user)
     }
 
-    @MessageMapping("/join")
+    @PostMapping("chatRoom/{chatRoomId}/join")
     fun joinChatRoom(
-        @Payload roomId: Long,
-        headerAccessor: SimpMessageHeaderAccessor
-    ) {
-        val userPrincipal = headerAccessor.sessionAttributes?.get("userPrincipal") as? UserPrincipal
-            ?: throw IllegalArgumentException("UserPrincipal not found in session attributes")
-
-        if (!chatService.checkRoomAccess(roomId, userPrincipal.memberId)) {
-            throw IllegalArgumentException("Access denied to the chat room.")
-        }
-
+        @AuthenticationPrincipal user: UserPrincipal,
+        @PathVariable chatRoomId: Long,
+    ): ResponseEntity<HasAccessDto> {
+        return ResponseEntity.ok(chatService.checkRoomAccess(chatRoomId, user.memberId))
     }
+
 }

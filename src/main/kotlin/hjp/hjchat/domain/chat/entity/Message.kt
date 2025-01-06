@@ -16,7 +16,6 @@ class Message (
     @JoinColumn(name = "user_id", nullable = false)
     val userId : MemberEntity,
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     val chatRoom: ChatRoom,
 
@@ -46,6 +45,7 @@ fun Message.toResponse(): MessageDto {
         sender =  userId.id,
         timestamp = createdAt.toString(),
         chatRoomId = chatRoom.id!!,
-        senderName = userId.userName
+        senderName = userId.userName,
+        profileImageUrl = userId.profileImageUrl
     )
 }

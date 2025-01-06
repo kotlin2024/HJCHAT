@@ -19,7 +19,6 @@ class S3Service(
         val putObjectRequest = PutObjectRequest.builder()
             .bucket(bucketName)
             .key(key)
-            .contentType("image/*")
             .build()
 
         val presignRequest = PutObjectPresignRequest.builder()
@@ -45,5 +44,9 @@ class S3Service(
 
         val presignedUrl = s3Presigner.presignGetObject(presignRequest)
         return presignedUrl.url().toString()
+    }
+
+    fun getProfileImageUrl(userId: Long): String {
+        return "https://hjchat-s3-bucket1.s3.ap-northeast-2.amazonaws.com/uploads/profile/$userId/profile"
     }
 }

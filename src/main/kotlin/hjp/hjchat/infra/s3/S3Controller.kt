@@ -24,7 +24,7 @@ class S3Controller(
         val key = "uploads/profile/$userId/profile"
 
         val member = oAuthRepository.findById(user.memberId).getOrNull()
-        member!!.profileImageUrl = key
+        member!!.profileImageUrl = s3Service.getProfileImageUrl(user.memberId)
         oAuthRepository.save(member)
         val presignedUrl = s3Service.generateUploadPresignedUrl(bucketName, key)
         return ResponseEntity.ok(presignedUrl)
@@ -34,11 +34,12 @@ class S3Controller(
     fun getProfilePhoto(@AuthenticationPrincipal user: UserPrincipal): ResponseEntity<String> {
 
         val member = oAuthRepository.findById(user.memberId).getOrNull()
-        val bucketName = "hjchat-s3-bucket1"
-        val key = member!!.profileImageUrl ?: throw Exception("Profile image not found")
-
-        // Presigned URL 생성
-        val presignedUrl = s3Service.generateDownloadPresignedUrl(bucketName, key)
-        return ResponseEntity.ok(presignedUrl)
+//        val bucketName = "hjchat-s3-bucket1"
+//        val key = member!!.profileImageUrl ?: throw Exception("Profile image not found")
+//
+//        // Presigned URL 생성
+//        val presignedUrl = s3Service.generateDownloadPresignedUrl(bucketName, key)
+//        return ResponseEntity.ok(presignedUrl)
+        return ResponseEntity.ok(member!!.profileImageUrl)
     }
 }

@@ -1,5 +1,6 @@
 package hjp.hjchat.domain.chat.service
 
+import hjp.hjchat.domain.chat.dto.HasAccessDto
 import hjp.hjchat.domain.chat.dto.MessageDto
 import hjp.hjchat.domain.chat.entity.ChatRoom
 import hjp.hjchat.domain.chat.entity.ChatRoomMember
@@ -48,17 +49,15 @@ class ChatService(
         val member = oAuthRepository.findById(user.memberId)
             .orElseThrow { IllegalArgumentException("Member not found") }
 
-        var presignedUrl: String? =null
-        if(message.profileImageUrl != null ){
-            presignedUrl = s3Service.generateUploadPresignedUrl(bucketName = "hjchat-s3-bucket1",key = message.profileImageUrl)
-        }
+        val profileImageUrl = s3Service.getProfileImageUrl(userId = user.memberId)
+
        // Kafka 메시지 전송
         kafkaProducerService.sendMessage(
             "chat-messages", mapOf(
                 "chatRoomId" to message.chatRoomId.toString(),
                 "senderName" to member.userName,
                 "content" to message.content,
-                "profileImageUrl" to presignedUrl
+                "profileImageUrl" to profileImageUrl
             )
         )
 
@@ -72,7 +71,7 @@ class ChatService(
     }
 
 
-    fun createChatRoom(memberId: Long, roomName: String, roomType: String, roomPassword: String?): ChatRoom {
+    fun createChatRoom(memberId: Long, roomName: String, roomType: String): ChatRoom {
         val member = oAuthRepository.findById(memberId)
             .orElseThrow { IllegalArgumentException("Member not found") }
 
@@ -80,7 +79,6 @@ class ChatService(
             ChatRoom(
                 roomName = roomName,
                 roomType = roomType.uppercase(),
-                roomPassword = roomPassword,
                 createdAt = LocalDateTime.now(),
                 members = mutableListOf()
             )
@@ -127,14 +125,14 @@ class ChatService(
         return chatRoomMember
     }
 
-    fun checkRoomAccess(chatRoomId: Long, userId: Long): Boolean {
+    fun checkRoomAccess(chatRoomId: Long, userId: Long): HasAccessDto {
         val chatRoom = chatRoomRepository.findById(chatRoomId)
             .orElseThrow { IllegalArgumentException("Chat room not found") }
 
-        return when (chatRoom.roomType.uppercase()) {
-            "PUBLIC" -> true
-            "PRIVATE" -> chatRoomMemberRepository.existsByChatRoomIdAndMemberId(chatRoomId, userId)
-            else -> throw IllegalArgumentException("Invalid room type")
-        }
+        return if(chatRoom.roomType.uppercase() == "PUBLIC" || chatRoomMemberRepository.existsByChatRoomIdAndMemberId(chatRoomId, userId))
+            HasAccessDto(hasAccess = true)
+        else
+            HasAccessDto(hasAccess = false)
+
     }
 }

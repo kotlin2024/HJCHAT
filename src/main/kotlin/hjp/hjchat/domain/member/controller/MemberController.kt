@@ -21,4 +21,5 @@ class MemberController(
         return ResponseEntity.status(HttpStatus.OK).body(memberService.getUserInfo(user))
     }
 
+
 }

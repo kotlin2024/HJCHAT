@@ -314,26 +314,61 @@
 
 
     // 채팅방 입장
-    function joinChatRoom(roomId, roomName) {
-        currentChatRoomId = roomId;
+    // function joinChatRoom(roomId, roomName) {
+    //     currentChatRoomId = roomId;
+    //
+    //     alert(`"${roomName}" 채팅방에 입장했습니다.`);
+    //     document.getElementById('chatBox').innerHTML = '';
+    //
+    //     loadChatRoomMessages(roomId);
+    //     if (ws) {
+    //         ws.subscribe(`/topic/chatroom/${roomId}`, function (message) {
+    //             const receivedMessage = JSON.parse(message.body);
+    //
+    //             displayMessage(receivedMessage);
+    //         });
+    //     }
+    // }
+    function joinChatRoom(chatRoomId, roomName) {
+        fetch(`http://localhost:8080/chatRoom/${chatRoomId}/join`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Failed to join the chat room.");
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!data.hasAccess) {
+                    throw new Error("Access denied to the chat room.");
+                }
 
-        alert(`"${roomName}" 채팅방에 입장했습니다.`);
-        document.getElementById('chatBox').innerHTML = '';
+                alert(`"${roomName}" 채팅방에 입장했습니다.`);
+                currentChatRoomId = chatRoomId;
 
-        loadChatRoomMessages(roomId);
-        if (ws) {
-            ws.subscribe(`/topic/chatroom/${roomId}`, function (message) {
-                const receivedMessage = JSON.parse(message.body);
+                // 기존 메시지 로드
+                loadChatRoomMessages(chatRoomId);
 
-                //추후 아래 3줄은 삭제할것
-                const sender = receivedMessage.sender || "Unknown";
-                const content = receivedMessage.content || "No content";
-                console.log(`DEBUG: Sender: ${sender}, Content: ${content}`);
-
-                displayMessage(receivedMessage);
+                // WebSocket 설정
+                if (ws) {
+                    ws.subscribe(`/topic/chatroom/${chatRoomId}`, function (message) {
+                        const receivedMessage = JSON.parse(message.body);
+                        displayMessage(receivedMessage);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error("Failed to join chat room:", error);
+                alert("채팅방에 입장할 수 없습니다: " + error.message);
             });
-        }
     }
+
+
 
     // 채팅방 생성
     function createChatRoom() {
@@ -412,15 +447,6 @@
     }
 
 
-
-    // 메시지 표시 이전버전
-    // function displayMessage(message) {
-    //     const chatBox = document.getElementById('chatBox');
-    //     const messageElement = document.createElement('div');
-    //     messageElement.innerHTML = `<strong>${message.senderName}:</strong> ${message.content}`;
-    //     chatBox.appendChild(messageElement);
-    //     chatBox.scrollTop = chatBox.scrollHeight;
-    // }
     function displayMessage(message) {
         const chatBox = document.getElementById('chatBox');
 
@@ -438,9 +464,8 @@
         profileImage.style.marginRight = '10px';
 
         console.log(message.profileImageUrl)
-        // Presigned URL 사용
         if (message.profileImageUrl) {
-            profileImage.src = message.profileImageUrl; // Presigned URL 설정
+            profileImage.src = message.profileImageUrl;
         } else {
             profileImage.src = 'default-profile.jpg'; // 기본 이미지
         }
@@ -456,9 +481,6 @@
         chatBox.appendChild(messageElement);
         chatBox.scrollTop = chatBox.scrollHeight; // 스크롤 자동 이동
     }
-
-
-
 
 
     function sendFriendRequest() {
@@ -539,7 +561,6 @@
         }
 
     }
-
 
 
     // 받은 친구 요청 로드
@@ -674,10 +695,11 @@
                 },
                 body: file
             });
+            const profileImageUrl = `https://hjchat-s3-bucket1.s3.ap-northeast-2.amazonaws.com/uploads/profile/${currentUserId}/profile`;
 
             if (uploadResponse.ok) {
                 document.getElementById('uploadResult').innerHTML = `<p style="color: green;">File uploaded successfully!</p>`;
-            } else {
+           } else {
                 throw new Error('Failed to upload file to S3.');
             }
         } catch (error) {
@@ -701,12 +723,12 @@
                 throw new Error('Failed to get profile image URL.');
             }
 
-            const presignedUrl = await response.text();
+            const profileImageUrl = await response.text();
 
             // 이미지 표시
             const profileContainer = document.getElementById('profileContainer');
-            profileContainer.innerHTML = `<img src="${presignedUrl}" alt="Profile Image" style="max-width: 300px; max-height: 300px;">`;
-            console.log(`이미지 url =  ${presignedUrl}` )
+            profileContainer.innerHTML = `<img src="${profileImageUrl}" alt="Profile Image" style="max-width: 300px; max-height: 300px;">`;
+            console.log(`이미지 url =  ${profileImageUrl}` )
         } catch (error) {
             console.error(error);
             alert('Failed to load profile image: ' + error.message);

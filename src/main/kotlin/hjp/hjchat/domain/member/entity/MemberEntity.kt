@@ -41,7 +41,7 @@ class MemberEntity(
     val memberRole: String,
 
     @Column(name="유저_프로필사진")
-    var profileImageUrl: String? = null,
+    var profileImageUrl: String? = "https://hjchat-s3-bucket1.s3.ap-northeast-2.amazonaws.com/uploads/profile/Default-profile/max.jpg",
 )
 {
     @PostPersist

@@ -32,6 +32,7 @@ type ChatRoomMember {
 type Query {
     getMessages(chatRoomId: ID!): [Message!]!
     getChatRooms: [ChatRoom!]!
+    getAccessPrivateChatRoom: [ChatRoom!]!
 }
 
 type Mutation {

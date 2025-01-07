@@ -31,6 +31,14 @@ class ChatService(
         return chatRoomRepository.findAll()
     }
 
+    fun getAccessPrivateChatRoom(user: UserPrincipal): List<ChatRoom>{
+        val chatMember =chatRoomMemberRepository.findByMemberId(user.memberId) ?: return listOf()
+
+        return chatMember
+            .filter{ it.chatRoom.roomType == "PRIVATE"}
+            .map{ it.chatRoom }
+    }
+
     fun getChatRoomMessages(chatRoomId: Long): List<MessageDto> {
         val chatRoom = chatRoomRepository.findById(chatRoomId)
             .orElseThrow { IllegalArgumentException("Chat room not found") }
@@ -41,7 +49,6 @@ class ChatService(
         return allMessages.map { it.toResponse() }
     }
 
-
     fun processMessage(message: MessageDto, user: UserPrincipal): Message {
         val chatRoom = chatRoomRepository.findById(message.chatRoomId)
             .orElseThrow { IllegalArgumentException("Chat room not found") }
@@ -49,15 +56,13 @@ class ChatService(
         val member = oAuthRepository.findById(user.memberId)
             .orElseThrow { IllegalArgumentException("Member not found") }
 
-        val profileImageUrl = s3Service.getProfileImageUrl(userId = user.memberId)
-
        // Kafka 메시지 전송
         kafkaProducerService.sendMessage(
             "chat-messages", mapOf(
                 "chatRoomId" to message.chatRoomId.toString(),
                 "senderName" to member.userName,
                 "content" to message.content,
-                "profileImageUrl" to profileImageUrl
+                "profileImageUrl" to member.profileImageUrl
             )
         )
 

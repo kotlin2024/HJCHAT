@@ -34,6 +34,13 @@ class ChatController(
         return chatService.getChatRoom()
     }
 
+    @QueryMapping
+    fun getAccessPrivateChatRoom(
+        @AuthenticationPrincipal user: UserPrincipal
+    ): List<ChatRoom>{
+        return chatService.getAccessPrivateChatRoom(user)
+    }
+
     @GetMapping("/chatroom/{chatRoomId}/messages")
     fun getChatRoomMessages(@PathVariable chatRoomId: Long): ResponseEntity<List<MessageDto>> {
         val messages = chatService.getChatRoomMessages(chatRoomId)

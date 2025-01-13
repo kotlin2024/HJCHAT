@@ -6,9 +6,9 @@ import hjp.hjchat.domain.member.entity.MemberEntity
 import hjp.hjchat.domain.member.entity.NotVerifyMemberEntity
 import hjp.hjchat.domain.member.model.FriendRequestRepository
 import hjp.hjchat.domain.member.model.FriendshipRepository
-import hjp.hjchat.exception.DuplicateEmailException
-import hjp.hjchat.exception.DuplicateUsernameException
-import hjp.hjchat.exception.PasswordMismatchException
+import hjp.hjchat.infra.security.exception.DuplicateEmailException
+import hjp.hjchat.infra.security.exception.DuplicateUsernameException
+import hjp.hjchat.infra.security.exception.PasswordMismatchException
 import hjp.hjchat.infra.security.ouath.dto.SignUpRequest
 import hjp.hjchat.infra.security.ouath.model.OAuthRepository
 import jakarta.transaction.Transactional

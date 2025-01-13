@@ -51,6 +51,13 @@ class OAuthController(
             .body(messageJson)
     }
 
+    @PostMapping("/logout")
+    fun logOut(
+        @CookieValue("refreshToken") refreshToken: String
+    ): ResponseEntity<String>{
+        return ResponseEntity.status(HttpStatus.OK).body(oAuthService.logout(refreshToken))
+    }
+
     @GetMapping("/verify-email")
     fun verifyEmail(@RequestParam token: String): ResponseEntity<String> {
         return ResponseEntity.status(HttpStatus.OK).body(oAuthService.verifyEmail(token))

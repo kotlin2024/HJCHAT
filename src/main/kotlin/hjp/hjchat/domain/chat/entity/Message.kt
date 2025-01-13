@@ -12,8 +12,8 @@ class Message (
     @Id @GeneratedValue
     val id: Long? = null,
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, )
+    @JoinColumn(name = "user_id", nullable = false, )
     val userId : MemberEntity,
 
     @ManyToOne(fetch = FetchType.LAZY)

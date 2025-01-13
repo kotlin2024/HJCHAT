@@ -24,8 +24,10 @@ class MemberService(
             userId = user.memberId,
             userName = member.userName,
             memberRole = member.memberRole,
-            profileImageUrl = member.profileImageUrl
-
+            profileImageUrl = member.profileImageUrl,
+            createdAt = member.createdAt.toString(),
+            userCode = member.userCode!!,
+            email = member.email,
         )
     }
 }

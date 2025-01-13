@@ -70,6 +70,9 @@ dependencies {
     // AWS CLOUD 의존성
     implementation("io.awspring.cloud:spring-cloud-starter-aws:2.4.2")
 
+    // Redis
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")

@@ -3,9 +3,10 @@ package hjp.hjchat.infra.security.ouath.service
 import hjp.hjchat.domain.member.dto.MemberRole
 import hjp.hjchat.domain.member.entity.MemberEntity
 import hjp.hjchat.domain.member.entity.NotVerifyMemberEntity
-import hjp.hjchat.exception.DuplicateEmailException
-import hjp.hjchat.exception.DuplicateUsernameException
-import hjp.hjchat.exception.PasswordMismatchException
+import hjp.hjchat.infra.redis.TokenBlacklistRepository
+import hjp.hjchat.infra.security.exception.DuplicateEmailException
+import hjp.hjchat.infra.security.exception.DuplicateUsernameException
+import hjp.hjchat.infra.security.exception.PasswordMismatchException
 import hjp.hjchat.infra.security.jwt.JwtTokenManager
 import hjp.hjchat.infra.security.jwt.TokenResponse
 import hjp.hjchat.infra.security.ouath.dto.LoginRequest
@@ -24,16 +25,17 @@ class OAuthService(
     private val passwordEncoder: PasswordEncoder,
     private val jwtTokenManager: JwtTokenManager,
     private val emailService: EmailService,
+    private val tokenBlacklistRepository: TokenBlacklistRepository,
 ) {
 
     @Transactional
     fun signUp(request: SignUpRequest): String {
 
         if (oAuthRepository.existsByUserName(request.username))
-            throw DuplicateUsernameException("이미 존재하는 닉네임")
+            throw DuplicateUsernameException("이미 존재하는 닉네임입니다.")
 
         if (oAuthRepository.existsByEmail(request.email))
-            throw DuplicateEmailException("존재하는 이메일")
+            throw DuplicateEmailException("이미 존재하는 이메일입니다.")
 
         if (request.password != request.confirmPassword)
             throw PasswordMismatchException("비밀번호와 확인 비밀번호가 일치하지 않습니다.")
@@ -88,5 +90,14 @@ class OAuthService(
         val tokens = jwtTokenManager.generateTokenResponse(loginMember.id, loginMember.memberRole)
 
         return tokens
+    }
+
+    fun logout(refreshToken: String): String {
+
+        jwtTokenManager.validateRefreshToken(refreshToken)
+
+        val expirationTime = jwtTokenManager.getExpiration(refreshToken)
+        tokenBlacklistRepository.addToBlacklist(refreshToken, expirationTime)
+        return "로그아웃 성공"
     }
 }

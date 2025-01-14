@@ -39,6 +39,7 @@ class OAuthController(
             isHttpOnly = true
             secure = true
             path = "/"
+            setAttribute("SameSite", "None")
         }
         response.addCookie(refreshTokenCookie)
 
@@ -55,6 +56,7 @@ class OAuthController(
     fun logOut(
         @CookieValue("refreshToken") refreshToken: String
     ): ResponseEntity<String>{
+        println("!!!@!@!!@@!@@!@Received Refresh Token: $refreshToken")
         return ResponseEntity.status(HttpStatus.OK).body(oAuthService.logout(refreshToken))
     }
 

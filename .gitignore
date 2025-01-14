@@ -6,6 +6,9 @@ build/
 !**/src/test/**/build/
 
 application.yml
+
+src/main/resources/keystore.p12
+
 ### STS ###
 .apt_generated
 .classpath

@@ -15,4 +15,5 @@ class WebConfig : WebMvcConfigurer {
             .exposedHeaders("Authorization")
             .allowCredentials(true)  // 쿠키를 허용하려면 true로 설정
     }
+
 }

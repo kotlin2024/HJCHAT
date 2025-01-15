@@ -97,7 +97,9 @@ class OAuthService(
         jwtTokenManager.validateRefreshToken(refreshToken)
 
         val expirationTime = jwtTokenManager.getExpiration(refreshToken)
-        tokenBlacklistRepository.addToBlacklist(refreshToken, expirationTime)
+        val now =  System.currentTimeMillis()
+        val ttl = (expirationTime - now)
+        tokenBlacklistRepository.addToBlacklist(refreshToken, ttl)
         return "로그아웃 성공"
     }
 }

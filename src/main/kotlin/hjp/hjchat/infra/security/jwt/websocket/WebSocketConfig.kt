@@ -22,7 +22,7 @@ class WebSocketConfig(private val jwtWebSocketHandshakeInterceptor: JwtWebSocket
     override fun registerStompEndpoints(registry: StompEndpointRegistry) {
         logger.info("Registering WebSocket endpoint at /ws")
         registry.addEndpoint("/ws")
-            .setAllowedOrigins("http://localhost:63342", "http://localhost:8080")
+            .setAllowedOrigins("http://localhost:63342", "http://localhost:8080","https://localhost:3000" )
             .addInterceptors(jwtWebSocketHandshakeInterceptor)  // HandshakeInterceptor 등록
             .withSockJS()
     }

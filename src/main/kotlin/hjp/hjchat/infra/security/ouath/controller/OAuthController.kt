@@ -1,9 +1,7 @@
 package hjp.hjchat.infra.security.ouath.controller
 
-import hjp.hjchat.infra.security.jwt.TokenResponse
 import hjp.hjchat.infra.security.ouath.dto.LoginRequest
 import hjp.hjchat.infra.security.ouath.dto.SignUpRequest
-import hjp.hjchat.infra.security.ouath.dto.UserInfo
 import hjp.hjchat.infra.security.ouath.service.OAuthService
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletResponse
@@ -56,7 +54,6 @@ class OAuthController(
     fun logOut(
         @CookieValue("refreshToken") refreshToken: String
     ): ResponseEntity<String>{
-        println("!!!@!@!!@@!@@!@Received Refresh Token: $refreshToken")
         return ResponseEntity.status(HttpStatus.OK).body(oAuthService.logout(refreshToken))
     }
 

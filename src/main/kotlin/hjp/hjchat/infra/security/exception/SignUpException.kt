@@ -1,4 +1,4 @@
-package hjp.hjchat.exception
+package hjp.hjchat.infra.security.exception
 
 class DuplicateUsernameException(message: String) : RuntimeException(message)
 

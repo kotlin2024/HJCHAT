@@ -323,23 +323,6 @@
             });
     }
 
-
-    // 채팅방 입장
-    // function joinChatRoom(roomId, roomName) {
-    //     currentChatRoomId = roomId;
-    //
-    //     alert(`"${roomName}" 채팅방에 입장했습니다.`);
-    //     document.getElementById('chatBox').innerHTML = '';
-    //
-    //     loadChatRoomMessages(roomId);
-    //     if (ws) {
-    //         ws.subscribe(`/topic/chatroom/${roomId}`, function (message) {
-    //             const receivedMessage = JSON.parse(message.body);
-    //
-    //             displayMessage(receivedMessage);
-    //         });
-    //     }
-    // }
     function joinChatRoom(chatRoomId, roomName) {
         fetch(`http://localhost:8080/chatRoom/${chatRoomId}/join`, {
             method: 'POST',

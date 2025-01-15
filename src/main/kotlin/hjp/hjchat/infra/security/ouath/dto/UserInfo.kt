@@ -6,4 +6,7 @@ data class UserInfo(
     val memberRole: String,
     val userName: String,
     val profileImageUrl: String?,
+    val createdAt: String,
+    val userCode: String,
+    val email: String,
 )

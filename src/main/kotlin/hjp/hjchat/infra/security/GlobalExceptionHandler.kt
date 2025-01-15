@@ -1,13 +1,16 @@
-import hjp.hjchat.exception.DuplicateEmailException
-import hjp.hjchat.exception.DuplicateUsernameException
-import hjp.hjchat.exception.PasswordMismatchException
+package hjp.hjchat.infra.security
+
+import hjp.hjchat.infra.security.exception.DuplicateEmailException
+import hjp.hjchat.infra.security.exception.DuplicateUsernameException
+import hjp.hjchat.infra.security.exception.PasswordMismatchException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.http.ResponseEntity
 import org.springframework.http.HttpStatus
 import jakarta.servlet.http.HttpServletRequest
 
-@ControllerAdvice
+//TODO() 해당 주석처리 해제할것
+//@ControllerAdvice
 class GlobalExceptionHandler {
 
     @ExceptionHandler(DuplicateUsernameException::class)
@@ -42,10 +45,7 @@ class GlobalExceptionHandler {
         // Swagger 관련 경로 제외
         if (request.requestURI.contains("/v3/api-docs") || request.requestURI.contains("/swagger-ui")) {
             // Swagger 경로는 예외 처리에서 제외합니다.
-            return ResponseEntity(
-                ErrorResponse(message = "Swagger 요청 중 오류가 발생했습니다."),
-                HttpStatus.INTERNAL_SERVER_ERROR
-            )
+            return ResponseEntity.ok().build()
         }
 
         // 다른 경로에 대한 예외 처리

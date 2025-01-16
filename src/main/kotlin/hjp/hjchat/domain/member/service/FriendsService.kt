@@ -33,7 +33,7 @@ class FriendsService(
 
         val friendList = friendshipRepository.findAllByUserId(user.memberId)
             ?: throw IllegalArgumentException("해당 ${user.memberId} ID의 데이터가 존재하지 않음")
-        return friendList.map { it.toResponse() }
+        return friendList.filter{ it.status == FriendshipStatus.ACCEPTED}.map { it.toResponse() }
     }
 
     @Transactional

@@ -61,6 +61,7 @@ class ChatService(
             "chat-messages", mapOf(
                 "chatRoomId" to message.chatRoomId.toString(),
                 "senderName" to member.userName,
+                "senderId" to member.id,
                 "content" to message.content,
                 "profileImageUrl" to member.profileImageUrl
             )

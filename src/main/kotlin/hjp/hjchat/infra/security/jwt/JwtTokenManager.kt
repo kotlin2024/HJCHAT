@@ -25,7 +25,7 @@ class JwtTokenManager(
         const val MEMBER_ROLE_KEY = "memberRole"
     }
 
-    private val accessTokenValidity = 3600 * 1000
+    private val accessTokenValidity = 60 * 1000
     private val refreshTokenValidity = 7 * 24 * 3600 * 1000
 
     private val key = Keys.hmacShaKeyFor(secret.toByteArray(StandardCharsets.UTF_8))

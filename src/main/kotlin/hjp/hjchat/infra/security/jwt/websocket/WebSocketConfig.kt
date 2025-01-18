@@ -6,10 +6,14 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer
 import org.slf4j.LoggerFactory
+import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration
 
 @Configuration
 @EnableWebSocketMessageBroker
-class WebSocketConfig(private val jwtWebSocketHandshakeInterceptor: JwtWebSocketHandshakeInterceptor) : WebSocketMessageBrokerConfigurer {
+class WebSocketConfig(
+    private val jwtWebSocketHandshakeInterceptor: JwtWebSocketHandshakeInterceptor,
+    private val customWebSocketHandlerDecoratorFactory: CustomWebSocketHandlerDecoratorFactory,
+) : WebSocketMessageBrokerConfigurer {
 
     val logger = LoggerFactory.getLogger(WebSocketConfig::class.java)
 
@@ -25,5 +29,10 @@ class WebSocketConfig(private val jwtWebSocketHandshakeInterceptor: JwtWebSocket
             .setAllowedOrigins("http://localhost:63342", "https://localhost:443","https://localhost:3000" )
             .addInterceptors(jwtWebSocketHandshakeInterceptor)  // HandshakeInterceptor 등록
             .withSockJS()
+    }
+
+    // ✅ CustomWebSocketHandlerDecoratorFactory 등록
+    override fun configureWebSocketTransport(registration: WebSocketTransportRegistration) {
+        registration.addDecoratorFactory(customWebSocketHandlerDecoratorFactory)
     }
 }

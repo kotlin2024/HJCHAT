@@ -1,9 +1,11 @@
 package hjp.hjchat.infra.security.ouath.controller
 
+import hjp.hjchat.infra.security.jwt.AccessTokenDto
 import hjp.hjchat.infra.security.ouath.dto.LoginRequest
 import hjp.hjchat.infra.security.ouath.dto.SignUpRequest
 import hjp.hjchat.infra.security.ouath.service.OAuthService
 import jakarta.servlet.http.Cookie
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -65,5 +67,12 @@ class OAuthController(
     @PostMapping("/social-login")
     fun socialLogin() {
         //TODO()
+    }
+
+    @PostMapping("/reissue")
+    fun reissueToken(
+        @CookieValue("refreshToken") refreshToken: String
+    ): ResponseEntity<AccessTokenDto> {
+        return ResponseEntity.status(HttpStatus.OK).body(oAuthService.reissueToken(refreshToken))
     }
 }

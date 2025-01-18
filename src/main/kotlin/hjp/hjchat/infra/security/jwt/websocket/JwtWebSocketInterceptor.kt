@@ -3,6 +3,7 @@ package hjp.hjchat.infra.security.jwt.websocket
 import hjp.hjchat.infra.security.jwt.JwtAuthenticationToken
 import hjp.hjchat.infra.security.jwt.JwtTokenManager
 import hjp.hjchat.infra.security.jwt.UserPrincipal
+import io.jsonwebtoken.ExpiredJwtException
 import org.springframework.http.server.ServerHttpRequest
 import org.springframework.http.server.ServerHttpResponse
 import org.springframework.security.core.context.SecurityContextHolder
@@ -26,7 +27,7 @@ class JwtWebSocketHandshakeInterceptor(
         val queryParams = request.uri.query
         val token = queryParams?.substringAfter("token=")?.substringBefore("&")
 
-        if (token == null || token.isBlank()) {
+        if (token.isNullOrBlank()) {
             throw AccessDeniedException("JWT Token is missing in query parameters")
         }
 
@@ -48,7 +49,12 @@ class JwtWebSocketHandshakeInterceptor(
             SecurityContextHolder.getContext().authentication = authentication
             attributes["userPrincipal"] = userPrincipal
         }.onFailure {
-            throw AccessDeniedException("Invalid JWT Token")
+            if(it is ExpiredJwtException) {
+                attributes["tokenValid"] = false  // ❗ 유효하지 않은 토큰
+            }
+            else{
+                throw AccessDeniedException("요효하지 않는 토큰")
+            }
         }
 
         return true

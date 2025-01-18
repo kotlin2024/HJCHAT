@@ -7,6 +7,7 @@ import hjp.hjchat.infra.redis.TokenBlacklistRepository
 import hjp.hjchat.infra.security.exception.DuplicateEmailException
 import hjp.hjchat.infra.security.exception.DuplicateUsernameException
 import hjp.hjchat.infra.security.exception.PasswordMismatchException
+import hjp.hjchat.infra.security.jwt.AccessTokenDto
 import hjp.hjchat.infra.security.jwt.JwtTokenManager
 import hjp.hjchat.infra.security.jwt.TokenResponse
 import hjp.hjchat.infra.security.ouath.dto.LoginRequest
@@ -101,5 +102,9 @@ class OAuthService(
         val ttl = (expirationTime - now)
         tokenBlacklistRepository.addToBlacklist(refreshToken, ttl)
         return "로그아웃 성공"
+    }
+
+    fun reissueToken(refreshToken: String): AccessTokenDto {
+        return AccessTokenDto( accessToken = jwtTokenManager.reissueAccessToken(refreshToken))
     }
 }

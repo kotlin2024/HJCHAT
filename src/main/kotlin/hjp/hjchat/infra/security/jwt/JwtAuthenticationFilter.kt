@@ -25,7 +25,6 @@ class JwtAuthenticationFilter(
         }
 
         var refreshToken: String? = null
-        refreshToken = getRefreshTokenFromCookies(request)
 
         if (pureToken != null) {
             jwtTokenManager.validateToken(pureToken).onSuccess {
@@ -47,11 +46,16 @@ class JwtAuthenticationFilter(
             }.onFailure {
                 logger.debug("Token validation failed", it)
                 if (it is ExpiredJwtException) {
+                    logger.info("토큰의 만료기간이 끝나서 validate되지 않았음!! ")
+                    refreshToken = getRefreshTokenFromCookies(request)
+                    logger.info("쿠키에서 가져온 refreshTOken값: $refreshToken")
 
                     if(refreshToken != null) {
-                        jwtTokenManager.validateRefreshToken(refreshToken)
-                        val newAccessToken = jwtTokenManager.reissueAccessToken(refreshToken)
+                        logger.info(" 토큰의 만료기간이 지났고 refreshToken이 null이 아님!")
+                        jwtTokenManager.validateRefreshToken(refreshToken!!)
+                        val newAccessToken = jwtTokenManager.reissueAccessToken(refreshToken!!)
                         response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer $newAccessToken")
+                        logger.info("토큰 재발급 성공! $newAccessToken")
                         val tokenInfo = jwtTokenManager.getInfoToken(newAccessToken)
                         val userPrincipal = UserPrincipal(memberId = tokenInfo!!.memberId, memberRole = setOf(tokenInfo.memberRole))
                         val authentication = JwtAuthenticationToken(
@@ -60,11 +64,12 @@ class JwtAuthenticationFilter(
                         SecurityContextHolder.getContext().authentication = authentication
                     }
 
-                    return
                 }
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "인증 실패")
+                else response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "인증 실패")
 
             }
+
+
         }
 
         filterChain.doFilter(request, response)

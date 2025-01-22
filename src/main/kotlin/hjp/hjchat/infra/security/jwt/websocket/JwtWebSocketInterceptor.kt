@@ -48,9 +48,12 @@ class JwtWebSocketHandshakeInterceptor(
 
             SecurityContextHolder.getContext().authentication = authentication
             attributes["userPrincipal"] = userPrincipal
+            attributes["tokenValid"] = true
         }.onFailure {
             if(it is ExpiredJwtException) {
+                response.headers.set("Close-Code", "4001")
                 attributes["tokenValid"] = false  // ❗ 유효하지 않은 토큰
+                println("토큰 만료로 인해 4001코드를 클라이언트로 보냄 ")
             }
             else{
                 throw AccessDeniedException("요효하지 않는 토큰")

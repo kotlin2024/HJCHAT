@@ -10,10 +10,15 @@ import hjp.hjchat.domain.chat.model.ChatRoomMemberRepository
 import hjp.hjchat.domain.chat.model.ChatRoomRepository
 import hjp.hjchat.domain.chat.model.MessageRepository
 import hjp.hjchat.infra.s3.S3Service
+import hjp.hjchat.infra.security.jwt.JwtTokenManager
 import hjp.hjchat.infra.security.jwt.UserPrincipal
 import hjp.hjchat.infra.security.ouath.model.OAuthRepository
+import io.jsonwebtoken.ExpiredJwtException
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
+import org.springframework.web.socket.CloseStatus
+import org.springframework.web.socket.WebSocketSession
 import java.time.LocalDateTime
 
 @Service
@@ -25,6 +30,7 @@ class ChatService(
     private val messagingTemplate: SimpMessagingTemplate,
     private val kafkaProducerService: KafkaProducerService,
     private val s3Service: S3Service,
+    private val jwtTokenManager: JwtTokenManager,
 ) {
 
     fun getChatRoom(): List<ChatRoom>{
@@ -140,5 +146,28 @@ class ChatService(
         else
             HasAccessDto(hasAccess = false)
 
+    }
+
+    fun handlePing(
+        message: Map<String, String>,
+        headerAccessor: SimpMessageHeaderAccessor) {
+
+        val token = message["token"] ?: throw IllegalArgumentException("Token is missing")
+
+        jwtTokenManager.validateToken(token).onFailure { exception ->
+            if (exception is ExpiredJwtException) {
+                println("🔒 AccessToken 만료 - 4001 코드로 연결 종료")
+                val sessionId = headerAccessor.sessionId
+                val session = headerAccessor.sessionAttributes?.get(sessionId) as? WebSocketSession
+                    ?: throw IllegalStateException("WebSocketSession not found for sessionId: $sessionId")
+
+                session.close(CloseStatus(4001, "Expired JWT Token"))
+                return
+            } else {
+                throw IllegalArgumentException("Invalid Token")
+            }
+        }
+
+        println("✅ Ping 처리 완료")
     }
 }

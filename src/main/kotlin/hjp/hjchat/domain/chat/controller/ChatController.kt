@@ -18,12 +18,10 @@ import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.stereotype.Controller
-import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 
-@CrossOrigin(origins = ["http://localhost:63342"]) //삭제해도 될듯?
 @Controller
 class ChatController(
     private val chatService: ChatService,
@@ -86,6 +84,12 @@ class ChatController(
         @PathVariable chatRoomId: Long,
     ): ResponseEntity<HasAccessDto> {
         return ResponseEntity.ok(chatService.checkRoomAccess(chatRoomId, user.memberId))
+    }
+
+    @MessageMapping("/ping")
+    fun handlePing(
+        @Payload message: Map<String, String>, headerAccessor: SimpMessageHeaderAccessor) {
+        chatService.handlePing(message, headerAccessor)
     }
 
 }

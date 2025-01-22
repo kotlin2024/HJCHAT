@@ -1,7 +1,6 @@
 package hjp.hjchat.infra.security.jwt.websocket
 
-import hjp.hjchat.infra.security.jwt.JwtTokenManager
-import io.jsonwebtoken.ExpiredJwtException
+
 import org.springframework.web.socket.WebSocketSession
 import org.springframework.web.socket.handler.WebSocketHandlerDecorator
 import org.springframework.web.socket.handler.WebSocketHandlerDecoratorFactory
@@ -16,6 +15,8 @@ class CustomWebSocketHandlerDecoratorFactory : WebSocketHandlerDecoratorFactory 
         return object : WebSocketHandlerDecorator(handler) {
             override fun afterConnectionEstablished(session: WebSocketSession) {
                 val tokenValid = session.attributes["tokenValid"] as? Boolean ?: false
+                println("✅ WebSocket 연결 세션 저장 - sessionId: ${session.id}")
+                session.attributes[session.id] = session  // 세션 저장
 
                 println(" ------------------tokenValid값:$tokenValid ----------------------")
                 if (!tokenValid) {
@@ -27,6 +28,11 @@ class CustomWebSocketHandlerDecoratorFactory : WebSocketHandlerDecoratorFactory 
 
                 println("✅ WebSocket 연결 성공")
                 super.afterConnectionEstablished(session)
+            }
+            override fun afterConnectionClosed(session: WebSocketSession, closeStatus: CloseStatus) {
+                println("❌ WebSocket 세션 종료 - sessionId: ${session.id}")
+                session.attributes.remove(session.id)  // 세션 제거
+                super.afterConnectionClosed(session, closeStatus)
             }
         }
     }

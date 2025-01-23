@@ -11,4 +11,6 @@ interface ChatRoomMemberRepository : JpaRepository<ChatRoomMember, Long> {
     fun existsByChatRoomIdAndMemberId(chatRoomId: Long, userId: Long): Boolean
 
     fun findByMemberId(memberId: Long): List<ChatRoomMember>?
+
+    fun findAllByChatRoomId(chatRoomId: Long): List<ChatRoomMember>?
 }

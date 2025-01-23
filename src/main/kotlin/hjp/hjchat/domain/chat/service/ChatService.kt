@@ -1,5 +1,6 @@
 package hjp.hjchat.domain.chat.service
 
+import hjp.hjchat.domain.chat.dto.ChatRoomMemberList
 import hjp.hjchat.domain.chat.dto.HasAccessDto
 import hjp.hjchat.domain.chat.dto.MessageDto
 import hjp.hjchat.domain.chat.entity.ChatRoom
@@ -169,5 +170,17 @@ class ChatService(
         }
 
         println("✅ Ping 처리 완료")
+    }
+
+    fun getChatRoomMembers(chatRoomId: Long, user: UserPrincipal): List<ChatRoomMemberList>? {
+
+        val roomMembers = chatRoomMemberRepository.findAllByChatRoomId(chatRoomId)
+            ?: throw IllegalArgumentException("해당 채팅방에 아무도 존재하지않음")
+        return roomMembers.map{
+            ChatRoomMemberList(
+                roomMemberId = it.member.id,
+                roomMemberCode = it.member.userCode!!,
+            )
+        }
     }
 }

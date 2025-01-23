@@ -2,6 +2,7 @@ package hjp.hjchat.domain.chat.controller
 
 import graphql.kickstart.tools.GraphQLMutationResolver
 import graphql.kickstart.tools.GraphQLQueryResolver
+import hjp.hjchat.domain.chat.dto.ChatRoomMemberList
 import hjp.hjchat.domain.chat.dto.HasAccessDto
 import hjp.hjchat.domain.chat.dto.MessageDto
 import hjp.hjchat.domain.chat.entity.ChatRoom
@@ -86,10 +87,19 @@ class ChatController(
         return ResponseEntity.ok(chatService.checkRoomAccess(chatRoomId, user.memberId))
     }
 
+    @GetMapping("chatRoom/{chatRoomId}/members")
+    fun getChatRoomMembers(
+        @AuthenticationPrincipal user: UserPrincipal,
+        @PathVariable chatRoomId: Long,
+    ):ResponseEntity<List<ChatRoomMemberList>>{
+        return ResponseEntity.ok(chatService.getChatRoomMembers(chatRoomId, user))
+    }
+
     @MessageMapping("/ping")
     fun handlePing(
         @Payload message: Map<String, String>, headerAccessor: SimpMessageHeaderAccessor) {
         chatService.handlePing(message, headerAccessor)
     }
+
 
 }

@@ -157,7 +157,7 @@ class ChatService(
 
         jwtTokenManager.validateToken(token).onFailure { exception ->
             if (exception is ExpiredJwtException) {
-                println("🔒 AccessToken 만료 - 4001 코드로 연결 종료")
+                //println("🔒 AccessToken 만료 - 4001 코드로 연결 종료")
                 val sessionId = headerAccessor.sessionId
                 val session = headerAccessor.sessionAttributes?.get(sessionId) as? WebSocketSession
                     ?: throw IllegalStateException("WebSocketSession not found for sessionId: $sessionId")
@@ -169,7 +169,7 @@ class ChatService(
             }
         }
 
-        println("✅ Ping 처리 완료")
+        //println("✅ Ping 처리 완료")
     }
 
     fun getChatRoomMembers(chatRoomId: Long, user: UserPrincipal): List<ChatRoomMemberList>? {

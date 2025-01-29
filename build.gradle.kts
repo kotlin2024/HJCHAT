@@ -43,6 +43,7 @@ dependencies {
     // MYSQL
     implementation("mysql:mysql-connector-java:8.0.33")
 
+
     // JJWT
     implementation("io.jsonwebtoken:jjwt-api:0.12.3")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.3")

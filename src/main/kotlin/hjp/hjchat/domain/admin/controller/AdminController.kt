@@ -3,6 +3,7 @@ package hjp.hjchat.domain.admin.controller
 import hjp.hjchat.domain.admin.service.AdminService
 import hjp.hjchat.infra.security.ouath.dto.SignUpRequest
 import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -41,5 +42,10 @@ class AdminController(
     fun deleteChatRooms(@PathVariable roomName: String): String{
         adminService.deleteChatRooms(roomName)
         return " 삭제한 채팅방 : $roomName "
+    }
+
+    @GetMapping("/check")
+    fun checkingUpdateServer(): String{
+        return "1월28일 4시에 업데이트한 서버파일입니다."
     }
 }

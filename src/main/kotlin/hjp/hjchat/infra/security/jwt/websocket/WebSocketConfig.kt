@@ -26,7 +26,7 @@ class WebSocketConfig(
     override fun registerStompEndpoints(registry: StompEndpointRegistry) {
         logger.info("Registering WebSocket endpoint at /ws")
         registry.addEndpoint("/ws")
-            .setAllowedOrigins("http://localhost:63342", "https://localhost:443","https://localhost:3000" )
+            .setAllowedOrigins("https://hj-chat.com", "https://localhost:443","https://localhost:3000" )
             .addInterceptors(jwtWebSocketHandshakeInterceptor)  // HandshakeInterceptor 등록
             .withSockJS()
     }

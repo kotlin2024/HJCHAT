@@ -10,7 +10,7 @@ class EmailService(
     @Autowired private val mailSender: JavaMailSender
 ) {
     fun sendVerificationEmail(email: String, token: String) {
-        val verificationUrl = "https://hj-chat.com/api/oauth/verify-email?token=$token" // 실제 서비스 도메인으로 변경
+        val verificationUrl = "https://api.hj-chat.com/api/oauth/verify-email?token=$token" // 실제 서비스 도메인으로 변경
         val subject = "회원가입 이메일 인증"
         val message = """
         안녕하세요! HJ CHAT 입니다.

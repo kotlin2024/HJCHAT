@@ -67,4 +67,12 @@ class FriendsController(
         return ResponseEntity.ok(friendsService.rejectFriendRequest(user = user, senderId = request.friendId))
     }
 
+    @DeleteMapping("/remove/{friendId}")
+    fun removeFriend(
+        @PathVariable friendId: Long,
+        @AuthenticationPrincipal user: UserPrincipal)
+    : ResponseEntity<Unit>{
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(friendsService.removeFriend(user, friendId))
+    }
+
 }

@@ -10,4 +10,6 @@ interface FriendshipRepository : JpaRepository<Friendship, Long> {
     fun findByUserIdAndFriendId(userId: Long, friendId: Long): Friendship?
 
     fun findAllByUserId(userId: Long): List<Friendship>?
+
+
 }

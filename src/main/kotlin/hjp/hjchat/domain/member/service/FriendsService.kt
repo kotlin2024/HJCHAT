@@ -195,4 +195,13 @@ class FriendsService(
         }
     }
 
+    @Transactional
+    fun removeFriend(user: UserPrincipal, friendId: Long) {
+        val memberId = user.memberId
+        val friendShip = friendshipRepository.findByUserIdAndFriendId(userId = memberId, friendId = friendId)?: throw IllegalArgumentException("해당 유저와 친구가 아님")
+        val friendShipForFriend = friendshipRepository.findByUserIdAndFriendId(userId = friendId, friendId = memberId)?: throw IllegalArgumentException("나는 애와 친구인데 애는 내 친구가 아닌 기묘한 상황")
+        friendshipRepository.delete(friendShip)
+        friendshipRepository.delete(friendShipForFriend)
+    }
+
 }

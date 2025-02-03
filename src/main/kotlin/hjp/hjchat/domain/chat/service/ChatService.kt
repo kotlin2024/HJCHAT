@@ -10,7 +10,6 @@ import hjp.hjchat.domain.chat.entity.toResponse
 import hjp.hjchat.domain.chat.model.ChatRoomMemberRepository
 import hjp.hjchat.domain.chat.model.ChatRoomRepository
 import hjp.hjchat.domain.chat.model.MessageRepository
-import hjp.hjchat.infra.s3.S3Service
 import hjp.hjchat.infra.security.jwt.JwtTokenManager
 import hjp.hjchat.infra.security.jwt.UserPrincipal
 import hjp.hjchat.infra.security.ouath.model.OAuthRepository
@@ -30,7 +29,6 @@ class ChatService(
     private val oAuthRepository: OAuthRepository,
     private val messagingTemplate: SimpMessagingTemplate,
     private val kafkaProducerService: KafkaProducerService,
-    private val s3Service: S3Service,
     private val jwtTokenManager: JwtTokenManager,
 ) {
 
@@ -65,7 +63,9 @@ class ChatService(
 
        // Kafka 메시지 전송
         kafkaProducerService.sendMessage(
-            "chat-messages", mapOf(
+            topic = "chat-messages",
+            key = message.chatRoomId.toString(),
+            message = mapOf(
                 "chatRoomId" to message.chatRoomId.toString(),
                 "senderName" to member.userName,
                 "senderId" to member.id,

@@ -13,7 +13,7 @@ class KafkaConsumerService(
 ) {
     private val logger = LoggerFactory.getLogger(KafkaConsumerService::class.java)
 
-    @KafkaListener(topics = ["chat-messages"], groupId = "hjchat-consumer-group")
+    @KafkaListener(topics = ["chat-messages"], groupId = "hjchat-consumer-group", concurrency = "3" )
     fun consumeMessage(record: ConsumerRecord<String, String>) {
         try{
             logger.info("Received message: ${record.value()}")

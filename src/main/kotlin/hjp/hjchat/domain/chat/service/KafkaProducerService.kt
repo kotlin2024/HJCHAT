@@ -10,11 +10,11 @@ class KafkaProducerService(
     private val objectMapper: ObjectMapper
 ) {
 
-    fun sendMessage(topic: String, message: Any) {
+    fun sendMessage(topic: String, key: String, message: Any) {
         try {
             // 메시지를 JSON으로 변환
             val jsonMessage = objectMapper.writeValueAsString(message)
-            kafkaTemplate.send(topic, jsonMessage)
+            kafkaTemplate.send(topic,key ,jsonMessage)
             println("Message sent to Kafka topic [$topic]: $jsonMessage")
         } catch (e: Exception) {
             println("Failed to send message to Kafka topic [$topic]: ${e.message}")

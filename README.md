@@ -57,6 +57,16 @@ docker-compose up -d
 로드 밸런서를 통해 HTTPS가 설정된 상태에서 `https://hj-chat.com`으로 접속합니다.
 http로 접속하면 자동으로 https로 리디렉션 됩니다.
 
+##  테스트 계정
+
+ID: test5  pw: 1234
+ID: test6  pw: 1234
+ID: test7  pw: 1234
+ID: test8  pw: 1234
+ID: test9  pw: 1234
+
+
+
 ## 📌 API 명세
 
 API 명세는 Swagger 또는 Postman 문서를 참고해주세요.

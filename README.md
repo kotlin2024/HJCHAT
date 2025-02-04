@@ -59,11 +59,11 @@ http로 접속하면 자동으로 https로 리디렉션 됩니다.
 
 ##  테스트 계정
 
-ID: test5  pw: 1234
-ID: test6  pw: 1234
-ID: test7  pw: 1234
-ID: test8  pw: 1234
-ID: test9  pw: 1234
+- ID: test5  pw: 1234
+- ID: test6  pw: 1234
+- ID: test7  pw: 1234
+- ID: test8  pw: 1234
+- ID: test9  pw: 1234
 
 
 

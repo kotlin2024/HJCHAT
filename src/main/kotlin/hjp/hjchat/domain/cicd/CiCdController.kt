@@ -1,5 +1,6 @@
 package hjp.hjchat.domain.cicd
 
+import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -11,7 +12,7 @@ class CiCdController(
 ) {
 
     @GetMapping("/get/test/")
-    fun ciCdForTest(): String{
-        return ciCdService.ciCdForTest()
+    fun ciCdForTest(): ResponseEntity<CiCdDto> {
+        return ResponseEntity.ok(ciCdService.ciCdForTest())
     }
 }

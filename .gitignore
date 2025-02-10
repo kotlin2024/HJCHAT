@@ -1,6 +1,8 @@
 HELP.md
 .gradle
 build/
++ !build/libs/*.jar  # ✅ 빌드된 JAR 파일만 Git에 포함
+
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
@@ -32,10 +34,10 @@ out/
 
 ### NetBeans ###
 /nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
+ /nbbuild/
+ /dist/
+ /nbdist/
+ /.nb-gradle/
 
 ### VS Code ###
 .vscode/

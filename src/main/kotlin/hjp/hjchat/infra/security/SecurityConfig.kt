@@ -46,6 +46,7 @@ class SecurityConfig(
                     "/ws/**",
                     "/admin/**", // TODO() 개발단계에서만 사용 추후에 반드시 삭제할것!!!!
                     "/actuator/health",
+                    "/ci_cd/**",
                 ).permitAll()
                     .requestMatchers(HttpMethod.GET, "/**").permitAll()
                     .anyRequest().authenticated()

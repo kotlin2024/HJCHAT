@@ -1,6 +1,7 @@
 HELP.md
 .gradle
-build/
+build/*
+!build/libs/
 + !build/libs/*.jar  # ✅ 빌드된 JAR 파일만 Git에 포함
 
 !gradle/wrapper/gradle-wrapper.jar

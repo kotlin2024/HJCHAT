@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service
 class CiCdService {
     fun ciCdForTest(): CiCdDto {
         return CiCdDto(
-            description = " 2025-02-10 7시 10분에 변경된 파일!",
+            description = " 2025-02-10 7시 16분에 변경된 파일!",
         )
     }
 }

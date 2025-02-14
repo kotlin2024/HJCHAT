@@ -36,7 +36,7 @@ HJ-Chat은 실시간 채팅 기능을 제공하는 웹 애플리케이션으로,
 - **도메인 관리**: AWS Route 53
 - **로드 밸런서 및 HTTPS 설정**
 - **배포 방식**: Docker + Docker Compose
-- **CI/CD**: jenkins (진행중-test-18:09)
+- **CI/CD**: jenkins
 
 ## 🚀 배포 및 실행 방법
 

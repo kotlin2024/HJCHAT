@@ -2,6 +2,7 @@ package hjp.hjchat.domain.admin.controller
 
 import hjp.hjchat.domain.admin.service.AdminService
 import hjp.hjchat.infra.security.ouath.dto.SignUpRequest
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -14,6 +15,11 @@ import org.springframework.web.bind.annotation.RestController
 class AdminController(
     private val adminService: AdminService,
 ) {
+
+    @GetMapping("/server_check")
+    fun checkServerOnOff(): ResponseEntity<String> {
+        return ResponseEntity.ok("OK")
+    }
 
     @DeleteMapping("/friend_request")
     fun deleteAllFriendRequestEntity(): String{

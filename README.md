@@ -35,8 +35,15 @@ HJ-Chat은 실시간 채팅 기능을 제공하는 웹 애플리케이션으로,
 - **서버**: AWS EC2
 - **도메인 관리**: AWS Route 53
 - **로드 밸런서 및 HTTPS 설정**
-- **배포 방식**: Docker + Docker Compose
-- **CI/CD**: jenkins
+- **배포 방식**: (Docker + Docker Compose), (Jenkins)
+- **CI/CD**: Jenkins
+
+
+### 클라이언트
+- **HTML**
+- **CSS**
+- **JAVASCRIPT**
+- **FRONTEND GIT URL**: [`[https://github.com/kotlin2024/HJCHAT-CLIENT]((https://github.com/kotlin2024/HJCHAT-CLIENT))`] 
 
 ## 🚀 배포 및 실행 방법
 

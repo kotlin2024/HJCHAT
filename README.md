@@ -2,6 +2,10 @@
 
 HJ-Chat은 실시간 채팅 기능을 제공하는 웹 애플리케이션으로, WebSocket을 활용하여 빠르고 안정적인 메시지 전송이 가능합니다. 또한 Kafka를 이용한 메시지 브로커 구조를 적용하여 확장성과 안정성을 고려한 설계를 채택하였습니다.
 
+## 시연 영상 🎥
+[![시연 영상](https://img.youtube.com/vi/AnaaG_2nfmw/0.jpg)](https://www.youtube.com/watch?v=AnaaG_2nfmw)
+
+
 ## 🌟 주요 기능
 
 - **실시간 채팅** (WebSocket 기반)
